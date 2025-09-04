@@ -55,6 +55,20 @@ CREATE TABLE staff_doctor_ext (
 );
 ```
 
+- 医生每日分配号额：
+
+```sql
+CREATE TABLE doctor_quota (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    staff_id INT NOT NULL,            -- 医生ID
+    quota_date DATE NOT NULL,         -- 日期
+    quota INT NOT NULL,               -- 分配号额
+    used INT DEFAULT 0,               -- 已用号额（可选，也可每次挂号时统计registration表）
+    FOREIGN KEY (staff_id) REFERENCES staff(staff_id),
+    UNIQUE (staff_id, quota_date)     -- 保证一个医生每天只能有一条分配记录
+);
+```
+
 - 科室表：
 
 ```sql
@@ -156,6 +170,17 @@ public enum NumberType {
     GENERAL,    // 普通号
     SPECIALIST  // 专家号
 }
+```
+
+- 号别配置表：
+
+```sql
+-- 号别静态配置表
+CREATE TABLE number_type_config (
+    number_type VARCHAR(20) PRIMARY KEY, // 号别 GENERAL | SPECIALIST
+    display_name VARCHAR(50) NOT NULL,
+    fee DECIMAL(10,2) NOT NULL
+);
 ```
 
 - 后端枚举状态
@@ -333,6 +358,7 @@ public enum MedicalItemType {
     EXAM,      // 检查
     LAB,       // 检验
     DISPOSAL  // 处置
+}
 ```
 
 - 医疗项目申请表：
@@ -440,4 +466,8 @@ CREATE TABLE medical_record (
     FOREIGN KEY (registration_id) REFERENCES registration(registration_id),
     FOREIGN KEY (doctor_id) REFERENCES staff(staff_id)
 );
+```
+
+```
+
 ```
