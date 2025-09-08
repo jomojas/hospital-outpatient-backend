@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ncst.hospitaloutpatient.mapper.auth.AuthMapper">
+
+    <!-- 1. 通过账号名查找账号信息 -->
+    <select id="selectStaffAccountByUsername" resultType="com.ncst.hospitaloutpatient.model.entity.auth.StaffAccountEntity">
+        SELECT
+            account_id,
+            staff_id,
+            account_name,
+            password,
+            status,
+            create_time,
+            last_login
+        FROM staff_account
+        WHERE account_name = #{username}
+            LIMIT 1
+    </select>
+
+    <!-- 2. 通过staff_id查找员工信息 -->
+    <select id="selectStaffByStaffId" resultType="com.ncst.hospitaloutpatient.model.entity.auth.StaffEntity">
+        SELECT
+            staff_id,
+            name,
+            phone,
+            id_card,
+            department_id,
+            description,
+            role_id,
+            create_time
+        FROM staff
+        WHERE staff_id = #{staffId}
+            LIMIT 1
+    </select>
+
+    <!-- 3. 通过role_id查找角色信息 -->
+    <select id="selectStaffRoleByStaffId" resultType="com.ncst.hospitaloutpatient.model.entity.auth.StaffRoleEntity">
+        SELECT
+            role_id,
+            role_name,
+            description
+        FROM staff_role
+        WHERE role_id = #{roleId}
+            LIMIT 1
+    </select>
+
+    <select id="selectStaffAccountByStaffId" resultType="com.ncst.hospitaloutpatient.model.entity.auth.StaffAccountEntity">
+        SELECT
+            account_id,
+            staff_id,
+            account_name,
+            password,
+            status,
+            create_time,
+            last_login
+        FROM staff_account
+        WHERE staff_id = #{staffId}
+            LIMIT 1
+    </select>
+
+    <!-- 4. 通过账号修改密码 -->
+    <update id="updatePasswordByStaffId">
+        UPDATE staff_account SET password = #{password} WHERE staff_id = #{staffId}
+    </update>
+
+</mapper>

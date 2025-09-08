@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ncst.hospitaloutpatient.mapper.hr.EmployeeMapper">
+
+    <select id="selectStaffDetailByFilter" resultType="com.ncst.hospitaloutpatient.model.dto.hr.StaffDetailResponse">
+        SELECT
+        s.staff_id,
+        s.name,
+        s.phone,
+        s.id_card,
+        s.department_id,
+        d.department_name,
+        d.type AS department_type,
+        s.role_id,
+        r.role_name,
+        s.description,
+        s.create_time
+        FROM staff s
+        LEFT JOIN department d ON s.department_id = d.department_id
+        LEFT JOIN staff_role r ON s.role_id = r.role_id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (s.name LIKE CONCAT('%', #{keyword}, '%') OR s.phone LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="departmentId != null">
+                AND s.department_id = #{departmentId}
+            </if>
+            <if test="roleId != null">
+                AND s.role_id = #{roleId}
+            </if>
+        </where>
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'name'">
+                CONVERT(s.name USING gbk)
+            </when>
+            <when test="sortBy == 'createTime'">
+                s.create_time
+            </when>
+            <otherwise>
+                s.create_time
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="order == 'asc'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="countStaffDetailByFilter" resultType="long">
+        SELECT COUNT(*)
+        FROM staff s
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (s.name LIKE CONCAT('%', #{keyword}, '%') OR s.phone LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="departmentId != null">
+                AND s.department_id = #{departmentId}
+            </if>
+            <if test="roleId != null">
+                AND s.role_id = #{roleId}
+            </if>
+        </where>
+    </select>
+
+    <insert id="insertStaff" parameterType="com.ncst.hospitaloutpatient.model.entity.auth.StaffEntity"
+            useGeneratedKeys="true" keyProperty="staffId">
+        INSERT INTO staff (name, phone, id_card, department_id, description, role_id, create_time)
+        VALUES (#{name}, #{phone}, #{idCard}, #{departmentId}, #{description}, #{roleId}, NOW())
+    </insert>
+
+    <insert id="insertStaffAccount">
+        INSERT INTO staff_account
+            (staff_id, account_name, password, status, create_time)
+        VALUES
+            (#{staffId}, #{accountName}, #{password}, 0, NOW())
+    </insert>
+
+    <insert id="insertStaffDoctorExt">
+        INSERT INTO staff_doctor_ext
+            (staff_id, is_expert)
+        VALUES
+            (#{staffId}, #{isExpert})
+    </insert>
+
+    <select id="getDepartmentType" resultType="string">
+        SELECT type FROM department WHERE department_id = #{departmentId}
+    </select>
+
+    <!-- 获取department type的前三个字符作为前缀 -->
+    <select id="getDepartmentPrefix" resultType="string">
+        SELECT UPPER(LEFT(type, 3)) AS prefix
+        FROM department
+        WHERE department_id = #{departmentId}
+    </select>
+
+    <!-- 获取某prefix+年份的最大流水号 -->
+    <select id="getMaxSerialNumber" resultType="int">
+        SELECT MAX(CAST(SUBSTRING(account_name, 6, 4) AS UNSIGNED))
+        FROM staff_account
+        WHERE account_name LIKE CONCAT(#{prefix}, #{year}, '%')
+    </select>
+
+</mapper>
