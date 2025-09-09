@@ -5,27 +5,43 @@
 
 <mapper namespace="com.ncst.hospitaloutpatient.mapper.outpatient.RegistrationMapper">
 
-    <insert id="insertRegistration" parameterType="com.ncst.hospitaloutpatient.model.dto.outpatient.CreateRegistrationRequest" useGeneratedKeys="true" keyProperty="registrationId">
-        INSERT INTO registration (
-            patient_id, department_id, doctor_id, visit_date, period, number_type,
-            init_quota, used_quota, settlement_type_id, payment_method_id, payable_amount, medical_record_book
-        ) VALUES (
-                     #{patientId}, #{departmentId}, #{doctorId}, #{visitDate}, #{period}, #{numberType},
-                     #{initQuota}, #{usedQuota}, #{settlementTypeId}, #{paymentMethodId}, #{payableAmount}, #{medicalRecordBook}
-                 )
+    <insert id="insertRegistration"
+            parameterType="com.ncst.hospitaloutpatient.model.dto.outpatient.CreateRegistrationRequest"
+            useGeneratedKeys="true" keyProperty="generatedRegistrationId">
+        INSERT INTO registration
+        (patient_id, department_id, doctor_id, visit_date, period, number_type,
+         init_quota, used_quota, settlement_type_id, payment_method_id, payable_amount, medical_record_book)
+        VALUES
+            (#{patientId}, #{departmentId}, #{doctorId}, #{visitDate}, #{period}, #{numberType},
+             #{initQuota}, #{usedQuota}, #{settlementTypeId}, #{paymentMethodId}, #{payableAmount}, #{medicalRecordBook})
     </insert>
 
-    <insert id="insertPatientVisit" useGeneratedKeys="true" keyProperty="visitId">
+    <insert id="insertPatientVisit"
+            parameterType="map"
+            useGeneratedKeys="true" keyProperty="visitId">
         INSERT INTO patient_visit
-        (
-            patient_id, registration_id, department_id, doctor_id, visit_date,
-            current_status, status_changed_at, created_at, updated_at
-        )
+        (patient_id, registration_id, department_id, doctor_id, visit_date,
+         current_status, status_changed_at, created_at, updated_at)
         VALUES
-            (
-                #{patientId}, #{registrationId}, #{departmentId}, #{doctorId}, #{visitDate},
-                #{currentStatus}, #{statusChangedAt}, #{createdAt}, #{updatedAt}
-            )
+            (#{patientId}, #{registrationId}, #{departmentId}, #{doctorId}, #{visitDate},
+             #{currentStatus}, #{statusChangedAt}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <update id="incrementDoctorQuotaUsed">
+        UPDATE doctor_quota
+        SET used = used + 1
+        WHERE staff_id = #{staffId}
+        AND quota_date = #{quotaDate}
+    </update>
+
+    <insert id="insertTransaction" parameterType="com.ncst.hospitaloutpatient.model.entity.outpatient.Transaction" useGeneratedKeys="true" keyProperty="transactionId">
+        INSERT INTO transaction (
+            business_type, registration_id, patient_id, amount,
+            transaction_type, payment_method_id, transaction_time, cashier_id, remark
+        ) VALUES (
+                     #{businessType}, #{registrationId}, #{patientId}, #{amount},
+                     #{transactionType}, #{paymentMethodId}, #{transactionTime}, #{cashierId}, #{remark}
+                 )
     </insert>
 
 </mapper>

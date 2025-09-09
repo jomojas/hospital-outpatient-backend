@@ -1,6 +1,8 @@
 package com.ncst.hospitaloutpatient.mapper.outpatient;
 
 import com.ncst.hospitaloutpatient.model.dto.outpatient.CreateRegistrationRequest;
+import com.ncst.hospitaloutpatient.model.entity.outpatient.PatientVisit;
+import com.ncst.hospitaloutpatient.model.entity.outpatient.Transaction;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -12,16 +14,9 @@ public interface RegistrationMapper {
 
     int insertRegistration(CreateRegistrationRequest request);
 
-    int insertPatientVisit(
-            @Param("patientId") Integer patientId,
-            @Param("registrationId") Integer registrationId,
-            @Param("departmentId") Integer departmentId,
-            @Param("doctorId") Integer doctorId,
-            @Param("visitDate") LocalDate visitDate,
-            @Param("currentStatus") String currentStatus,
-            @Param("statusChangedAt") LocalDateTime statusChangedAt,
-            @Param("createdAt") LocalDateTime createdAt,
-            @Param("updatedAt") LocalDateTime updatedAt
-    );
+    int insertPatientVisit(PatientVisit patientVisit);
 
+    int incrementDoctorQuotaUsed(@Param("staffId") Integer staffId, @Param("quotaDate") LocalDate quotaDate);
+
+    int insertTransaction(Transaction transaction);
 }

@@ -1,12 +1,19 @@
 package com.ncst.hospitaloutpatient.service.outpatient;
 
+import com.ncst.hospitaloutpatient.common.enums.BusinessType;
+import com.ncst.hospitaloutpatient.common.enums.TransactionType;
 import com.ncst.hospitaloutpatient.common.enums.VisitStatus;
+import com.ncst.hospitaloutpatient.common.exception.BusinessException;
 import com.ncst.hospitaloutpatient.mapper.outpatient.RegistrationMapper;
 import com.ncst.hospitaloutpatient.model.dto.outpatient.CreateRegistrationRequest;
 import com.ncst.hospitaloutpatient.model.dto.outpatient.CreateRegistrationResponse;
+import com.ncst.hospitaloutpatient.model.entity.outpatient.PatientVisit;
+import com.ncst.hospitaloutpatient.model.entity.outpatient.Transaction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 
@@ -15,31 +22,82 @@ public class RegistrationService {
     @Autowired
     private RegistrationMapper registrationMapper;
 
+    public Integer getCurrentStaffId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() != null) {
+            // 你在 filter 里 set 的是字符串 staffId
+            String staffIdStr = authentication.getPrincipal().toString();
+            try {
+                return Integer.parseInt(staffIdStr);
+            } catch (NumberFormatException e) {
+                // 可以做异常处理
+            }
+        }
+        return null;
+    }
+
     @Transactional
     public CreateRegistrationResponse createRegistration(CreateRegistrationRequest request) {
         // 1. 插入 registration 表
-        registrationMapper.insertRegistration(request);
+        int regInserted = registrationMapper.insertRegistration(request);
+        Integer registrationId = request.getGeneratedRegistrationId();
+        if (regInserted != 1 || registrationId == null || registrationId <= 0) {
+            throw new BusinessException(500, "挂号记录插入失败！");
+        }
 
-        Integer registrationId = request.getRegistrationId();
-
-        // 2. 插入 patient_visit 表
+        // 2. 构造 PatientVisit 对象并插入
         LocalDateTime now = LocalDateTime.now();
-        registrationMapper.insertPatientVisit(
-                request.getPatientId(),
-                registrationId,
-                request.getDepartmentId(),
+        PatientVisit patientVisit = new PatientVisit();
+        patientVisit.setPatientId(request.getPatientId());
+        patientVisit.setRegistrationId(registrationId);
+        patientVisit.setDepartmentId(request.getDepartmentId());
+        patientVisit.setDoctorId(request.getDoctorId());
+        patientVisit.setVisitDate(request.getVisitDate());
+        patientVisit.setCurrentStatus(VisitStatus.WAITING_FOR_CONSULTATION.name());
+        patientVisit.setStatusChangedAt(now);
+        patientVisit.setCreatedAt(now);
+        patientVisit.setUpdatedAt(now);
+
+        int visitInserted = registrationMapper.insertPatientVisit(patientVisit);
+        Integer visitId = patientVisit.getVisitId();
+        if (visitInserted != 1 || visitId == null || visitId <= 0) {
+            throw new BusinessException(500, "就诊主流程记录插入失败！");
+        }
+
+        // 3. 更新 doctor_quota.used + 1
+        int quotaUpdated = registrationMapper.incrementDoctorQuotaUsed(
                 request.getDoctorId(),
-                request.getVisitDate(),
-                VisitStatus.WAITING_FOR_CONSULTATION.name(),
-                now, now, now
+                request.getVisitDate()
+                // 可根据你的表结构补充 period/numberType 条件
         );
+        if (quotaUpdated != 1) {
+            throw new BusinessException(500, "更新医生号额失败！");
+        }
 
-        Integer visitId = request.getVisitId();
+        // 4. 插入 transaction 消费记录
+        Integer cashierId = getCurrentStaffId();
+        Transaction transaction = new Transaction();
+        transaction.setBusinessType(BusinessType.REGISTRATION.name());
+        transaction.setRegistrationId(registrationId);
+        transaction.setPatientId(request.getPatientId());
+        transaction.setAmount(request.getPayableAmount());
+        transaction.setTransactionType(TransactionType.PAY.name());
+        transaction.setPaymentMethodId(request.getPaymentMethodId());
+        transaction.setTransactionTime(now);
+        transaction.setCashierId(cashierId); // 可根据登录用户获取
+        transaction.setRemark("挂号费");
 
-        // 3. 返回响应
+        int transInserted = registrationMapper.insertTransaction(transaction);
+        Integer transactionId = transaction.getTransactionId();
+        if (transInserted != 1) {
+            throw new BusinessException(500, "消费记录插入失败！");
+        }
+
+        // 4. 返回响应
         CreateRegistrationResponse response = new CreateRegistrationResponse();
         response.setRegistrationId(registrationId);
         response.setVisitId(visitId);
+        response.setTransactionId(transactionId);
         return response;
     }
 }

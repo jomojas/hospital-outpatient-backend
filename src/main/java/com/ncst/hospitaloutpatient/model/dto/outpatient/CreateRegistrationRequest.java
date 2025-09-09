@@ -41,6 +41,9 @@ public class CreateRegistrationRequest {
     @Schema(description = "应收金额", example = "20.00")
     private BigDecimal payableAmount;
 
-    @Schema(description = "是否购买病历本（0=否，1=是）", example = "1")
+    @Schema(description = "是否需要病历本（0=否，1=是）", example = "1")
     private Integer medicalRecordBook;
+
+    // 仅用于 MyBatis 主键回填
+    private Integer generatedRegistrationId;
 }

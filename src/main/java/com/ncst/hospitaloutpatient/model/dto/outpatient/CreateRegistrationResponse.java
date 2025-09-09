@@ -10,4 +10,7 @@ public class CreateRegistrationResponse {
 
     @Schema(description = "就诊ID")
     private Integer visitId;
+
+    @Schema(description = "交易记录ID")
+    private Integer transactionId;
 }
