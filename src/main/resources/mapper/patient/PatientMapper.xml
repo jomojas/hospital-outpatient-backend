@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ncst.hospitaloutpatient.mapper.patient.PatientMapper">
+
+    <select id="searchPatient" resultType="com.ncst.hospitaloutpatient.model.dto.patient.PatientResponse">
+        SELECT
+            patient_id AS patientId,
+            patient_no AS patientNo,
+            name,
+            gender,
+            birthday,
+            id_card AS idCard,
+            address
+        FROM patient
+        WHERE
+            (#{name} IS NULL OR name LIKE CONCAT('%', #{name}, '%'))
+          AND (#{idCard} IS NULL OR id_card LIKE CONCAT('%', #{idCard}, '%'))
+    </select>
+
+</mapper>
