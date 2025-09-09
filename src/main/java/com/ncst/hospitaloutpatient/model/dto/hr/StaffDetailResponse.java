@@ -17,5 +17,6 @@ public class StaffDetailResponse {
     private Integer roleId;
     private String roleName;       // 新增
     private String description;
+    private Boolean isExpert; // 新增
     private LocalDateTime createTime;
 }

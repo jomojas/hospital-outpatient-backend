@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ncst.hospitaloutpatient.mapper.reference.CatalogMapper">
+
+    <select id="selectExamItems" resultType="com.ncst.hospitaloutpatient.model.dto.reference.MedicalItemResponse">
+        SELECT
+        item_id AS itemId,
+        item_code AS itemCode,
+        item_name AS itemName,
+        item_type AS itemType,
+        price,
+        description
+        FROM medical_service_item
+        WHERE item_type = 'EXAM'
+        AND status = 'ENABLED'
+        <if test="keyword != null and keyword != ''">
+            AND (item_name LIKE CONCAT('%', #{keyword}, '%')
+            OR item_code LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY item_id
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countExamItems" resultType="int">
+        SELECT COUNT(*)
+        FROM medical_service_item
+        WHERE item_type = 'EXAM'
+        AND status = 'ENABLED'
+        <if test="keyword != null and keyword != ''">
+            AND (item_name LIKE CONCAT('%', #{keyword}, '%')
+            OR item_code LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+    </select>
+
+    <select id="selectLabItems" resultType="com.ncst.hospitaloutpatient.model.dto.reference.MedicalItemResponse">
+        SELECT
+        item_id AS itemId,
+        item_code AS itemCode,
+        item_name AS itemName,
+        item_type AS itemType,
+        price,
+        description
+        FROM medical_service_item
+        WHERE item_type = 'LAB'
+        AND status = 'ENABLED'
+        <if test="keyword != null and keyword != ''">
+            AND (item_name LIKE CONCAT('%', #{keyword}, '%')
+            OR item_code LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY item_id
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countLabItems" resultType="int">
+        SELECT COUNT(*)
+        FROM medical_service_item
+        WHERE item_type = 'LAB'
+        AND status = 'ENABLED'
+        <if test="keyword != null and keyword != ''">
+            AND (item_name LIKE CONCAT('%', #{keyword}, '%')
+            OR item_code LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+    </select>
+
+    <select id="selectDisposalItems" resultType="com.ncst.hospitaloutpatient.model.dto.reference.MedicalItemResponse">
+        SELECT
+        item_id AS itemId,
+        item_code AS itemCode,
+        item_name AS itemName,
+        item_type AS itemType,
+        price,
+        description
+        FROM medical_service_item
+        WHERE item_type = 'DISPOSAL'
+        AND status = 'ENABLED'
+        <if test="keyword != null and keyword != ''">
+            AND (item_name LIKE CONCAT('%', #{keyword}, '%')
+            OR item_code LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY item_id
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countDisposalItems" resultType="int">
+        SELECT COUNT(*)
+        FROM medical_service_item
+        WHERE item_type = 'DISPOSAL'
+        AND status = 'ENABLED'
+        <if test="keyword != null and keyword != ''">
+            AND (item_name LIKE CONCAT('%', #{keyword}, '%')
+            OR item_code LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+    </select>
+
+    <select id="selectDrugCatalog" resultType="com.ncst.hospitaloutpatient.model.dto.reference.DrugDetailResponse">
+        SELECT
+        d.drug_code AS drugCode,
+        d.drug_name AS drugName,
+        d.category_id AS categoryId,
+        c.category_name AS categoryName,
+        c.description AS categoryDescription,
+        d.production_date AS productionDate,
+        d.shelf_life AS shelfLife,
+        d.stock_quantity AS stockQuantity,
+        d.specification AS specification,
+        d.unit AS unit,
+        d.retail_price AS retailPrice,
+        d.description AS description
+        FROM drug d
+        LEFT JOIN drug_category c ON d.category_id = c.category_id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (d.drug_name LIKE CONCAT('%', #{keyword}, '%')
+                OR d.drug_code LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="categoryId != null">
+                AND d.category_id = #{categoryId}
+            </if>
+        </where>
+        ORDER BY d.drug_code
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countDrugCatalog" resultType="int">
+        SELECT COUNT(*)
+        FROM drug d
+        LEFT JOIN drug_category c ON d.category_id = c.category_id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (d.drug_name LIKE CONCAT('%', #{keyword}, '%')
+                OR d.drug_code LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="categoryId != null">
+                AND d.category_id = #{categoryId}
+            </if>
+        </where>
+    </select>
+
+</mapper>

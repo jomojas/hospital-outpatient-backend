@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ncst.hospitaloutpatient.mapper.organization.DepartmentMapper">
+
+    <select id="selectDistinctTypes" resultType="java.lang.String">
+        SELECT DISTINCT type FROM department
+    </select>
+
+    <select id="selectDepartmentsByType" resultType="com.ncst.hospitaloutpatient.model.dto.organization.DepartmentResponse">
+        SELECT
+        department_id AS departmentId,
+        department_name AS departmentName,
+        type
+        FROM department
+        <where>
+            <if test="type != null and type != ''">
+                type = #{type}
+            </if>
+        </where>
+        ORDER BY department_id
+    </select>
+
+    <select id="selectRolesByDepartmentId" resultType="com.ncst.hospitaloutpatient.model.dto.organization.DepartmentRoleResponse">
+        SELECT
+            sr.role_id AS roleId,
+            sr.role_name AS roleName,
+            sr.description AS description
+        FROM department_role dr
+                 INNER JOIN staff_role sr ON dr.role_id = sr.role_id
+        WHERE dr.department_id = #{departmentId}
+    </select>
+
+</mapper>

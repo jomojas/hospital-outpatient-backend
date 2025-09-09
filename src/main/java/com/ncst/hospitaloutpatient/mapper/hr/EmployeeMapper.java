@@ -4,6 +4,7 @@ import com.ncst.hospitaloutpatient.model.dto.hr.StaffDetailResponse;
 import com.ncst.hospitaloutpatient.model.entity.auth.StaffEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -37,6 +38,26 @@ public interface EmployeeMapper {
     // 插入staff_doctor_ext
     int insertStaffDoctorExt(@Param("staffId") Integer staffId,
                              @Param("isExpert") Integer isExpert);
+
+    // 更新 staff 表
+    int updateStaff(@Param("id") Integer id,
+                    @Param("departmentId") Integer departmentId,
+                    @Param("roleId") Integer roleId,
+                    @Param("name") String name,
+                    @Param("phone") String phone,
+                    @Param("idCard") String idCard);
+
+    // 更新 staff_doctor_ext 表（只更新 is_expert 字段，不存在则插入）
+    int updateDoctorExt(@Param("id") Integer id, @Param("isExpert") Boolean isExpert);
+
+    // 逻辑删除员工（将staff_account.status设为1）
+    int deleteEmployeeByStaffId(@Param("staffId") Integer staffId);
+
+    // 恢复员工（将staff_account.status设为0）
+    int restoreEmployeeByStaffId(@Param("staffId") Integer staffId);
+
+    // 根据staffId查询员工详情
+    StaffDetailResponse selectStaffDetailById(@Param("staffId") Integer staffId);
 
     // 查询部门类型
     String getDepartmentType(@Param("departmentId") Integer departmentId);

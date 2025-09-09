@@ -58,7 +58,7 @@ public class AuthController {
             description = "更改当前用户的密码"
     )
     @PostMapping("/password/change")
-    public ApiResponse<?> changePassword(@RequestBody ChangePasswordRequest request) {
+    public ApiResponse<?> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
         String staffId = SecurityContextHolder.getContext().getAuthentication().getName();
         authService.changePassword(staffId, request.getOldPassword(), request.getNewPassword());
         return ApiResponse.ok("密码修改成功");

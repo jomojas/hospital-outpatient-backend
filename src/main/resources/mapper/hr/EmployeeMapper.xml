@@ -17,10 +17,12 @@
         s.role_id,
         r.role_name,
         s.description,
-        s.create_time
+        s.create_time,
+        ext.is_expert
         FROM staff s
         LEFT JOIN department d ON s.department_id = d.department_id
         LEFT JOIN staff_role r ON s.role_id = r.role_id
+        LEFT JOIN staff_doctor_ext ext ON s.staff_id = ext.staff_id
         <where>
             <if test="keyword != null and keyword != ''">
                 (s.name LIKE CONCAT('%', #{keyword}, '%') OR s.phone LIKE CONCAT('%', #{keyword}, '%'))
@@ -103,6 +105,58 @@
         SELECT MAX(CAST(SUBSTRING(account_name, 6, 4) AS UNSIGNED))
         FROM staff_account
         WHERE account_name LIKE CONCAT(#{prefix}, #{year}, '%')
+    </select>
+
+    <!-- 更新 staff 表 -->
+    <update id="updateStaff">
+        UPDATE staff
+        SET
+            department_id = #{departmentId},
+            role_id = #{roleId},
+            name = #{name},
+            phone = #{phone},
+            id_card = #{idCard}
+        WHERE staff_id = #{id}
+    </update>
+
+    <!-- 更新 staff_doctor_ext 表（只更新 is_expert 字段） -->
+    <update id="updateDoctorExt">
+        UPDATE staff_doctor_ext
+        SET is_expert = #{isExpert}
+        WHERE staff_id = #{id}
+    </update>
+
+    <update id="deleteEmployeeByStaffId">
+        UPDATE staff_account
+        SET status = 1
+        WHERE staff_id = #{staffId}
+    </update>
+
+    <update id="restoreEmployeeByStaffId">
+        UPDATE staff_account
+        SET status = 0
+        WHERE staff_id = #{staffId}
+    </update>
+
+    <select id="selectStaffDetailById" resultType="com.ncst.hospitaloutpatient.model.dto.hr.StaffDetailResponse">
+        SELECT
+            s.staff_id,
+            s.name,
+            s.phone,
+            s.id_card,
+            s.department_id,
+            d.department_name,
+            d.type AS department_type,
+            s.role_id,
+            r.role_name,
+            s.description,
+            s.create_time,
+            ext.is_expert
+        FROM staff s
+                 LEFT JOIN department d ON s.department_id = d.department_id
+                 LEFT JOIN staff_role r ON s.role_id = r.role_id
+                 LEFT JOIN staff_doctor_ext ext ON s.staff_id = ext.staff_id
+        WHERE s.staff_id = #{staffId}
     </select>
 
 </mapper>

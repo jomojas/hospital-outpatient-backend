@@ -5,6 +5,7 @@ import com.ncst.hospitaloutpatient.common.exception.BusinessException;
 import com.ncst.hospitaloutpatient.mapper.hr.EmployeeMapper;
 import com.ncst.hospitaloutpatient.model.dto.hr.CreateEmployeeRequest;
 import com.ncst.hospitaloutpatient.model.dto.hr.StaffDetailResponse;
+import com.ncst.hospitaloutpatient.model.dto.hr.UpdateEmployeeDTO;
 import com.ncst.hospitaloutpatient.model.entity.auth.StaffEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.kafka.SslBundleSslEngineFactory;
@@ -84,6 +85,47 @@ public class EmployeeService {
         int nextSerial = (maxSerial == null ? 1 : maxSerial + 1);
         // 4. 拼接
         return String.format("%s%s%04d", prefix, year, nextSerial);
+    }
+
+    public void updateEmployee(Integer id, UpdateEmployeeDTO dto) {
+        // 1. 更新 staff 基础信息
+        int count = employeeMapper.updateStaff(
+                id,
+                dto.getDepartmentId(),
+                dto.getRoleId(),
+                dto.getName(),
+                dto.getPhone(),
+                dto.getIdCard()
+        );
+        if (count <= 0) {
+            throw new BusinessException(500, "员工信息更新失败");
+        }
+
+        // 2. 如果 isExpert 不为 null，更新 staff_doctor_ext
+        if (dto.getIsExpert() != null) {
+            int updated = employeeMapper.updateDoctorExt(id, dto.getIsExpert());
+            if (updated == 0) {
+                throw new BusinessException(500, "专家信息更新失败");
+            }
+        }
+    }
+
+    public void deleteEmployee(Integer staffId) {
+        int affected = employeeMapper.deleteEmployeeByStaffId(staffId);
+        if (affected <= 0) {
+            throw new BusinessException(500, "删除员工失败");
+        }
+    }
+
+    public void restoreEmployee(Integer staffId) {
+        int affected = employeeMapper.restoreEmployeeByStaffId(staffId);
+        if (affected <= 0) {
+            throw new BusinessException(500, "恢复员工失败");
+        }
+    }
+
+    public StaffDetailResponse getEmployee(Integer staffId) {
+        return employeeMapper.selectStaffDetailById(staffId);
     }
 
     public long countEmployees(String keyword, Integer departmentId, Integer roleId) {
