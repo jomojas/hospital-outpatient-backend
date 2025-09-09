@@ -85,7 +85,7 @@
 
 - POST /api/registrations → createRegistration()
 - GET /api/registrations/{id} → getRegistration(@PathVariable id)
-- GET /api/registrations?page=&size=&date=&deptId=&doctorId=&status=&keyword= → listRegistrations()
+- GET /api/registrations?page=&pageSize=&date=&deptId=&doctorId=&status=&keyword= → listRegistrations()
 - POST /api/registrations/{id}/cancel → cancelRegistration(@PathVariable id)
 
 ---
