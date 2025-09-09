@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ncst.hospitaloutpatient.mapper.outpatient.RegistrationMapper">
+
+    <insert id="insertRegistration" parameterType="com.ncst.hospitaloutpatient.model.dto.outpatient.CreateRegistrationRequest" useGeneratedKeys="true" keyProperty="registrationId">
+        INSERT INTO registration (
+            patient_id, department_id, doctor_id, visit_date, period, number_type,
+            init_quota, used_quota, settlement_type_id, payment_method_id, payable_amount, medical_record_book
+        ) VALUES (
+                     #{patientId}, #{departmentId}, #{doctorId}, #{visitDate}, #{period}, #{numberType},
+                     #{initQuota}, #{usedQuota}, #{settlementTypeId}, #{paymentMethodId}, #{payableAmount}, #{medicalRecordBook}
+                 )
+    </insert>
+
+    <insert id="insertPatientVisit" useGeneratedKeys="true" keyProperty="visitId">
+        INSERT INTO patient_visit
+        (
+            patient_id, registration_id, department_id, doctor_id, visit_date,
+            current_status, status_changed_at, created_at, updated_at
+        )
+        VALUES
+            (
+                #{patientId}, #{registrationId}, #{departmentId}, #{doctorId}, #{visitDate},
+                #{currentStatus}, #{statusChangedAt}, #{createdAt}, #{updatedAt}
+            )
+    </insert>
+
+</mapper>

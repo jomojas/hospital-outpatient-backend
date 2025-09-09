@@ -25,7 +25,10 @@
 
 - GET /api/employees → listEmployees()
 - POST /api/employees → createEmployee()
+- GET /api/employees/accountName → getAccountName()
 - PUT /api/employees/{id} → updateEmployee(@PathVariable id)
+- DELETE /api/employees/{id} → deleteEmployee(@PathVariable id)
+- PUT /api/employees/{id}/restore -> restoreEmployee(@PathVariable id)
 - GET /api/employees/{id} → getEmployee(@PathVariable id)
 
 ---
@@ -36,15 +39,16 @@
 
 - GET /api/dictionaries/settlement-categories → listSettlementCategories()
 - GET /api/dictionaries/noon-sessions → listNoonSessions()
-- GET /api/dictionaries/registration-types → listRegistrationTypes()
+  GET /api/dictionaries/number-types → listNumberTypes()
 - GET /api/dictionaries/payment-methods → listPaymentMethods()
+- GET /api/dictionaries/drug-categories → listDrugCategories()
 
 文件：com/ncst/hospitaloutpatient/controller/reference/CatalogController.java
 
 - GET /api/catalog/exam-items?page=&size=&keyword= → listExamItems()
 - GET /api/catalog/lab-items?page=&size=&keyword= → listLabItems()
-- GET /api/catalog/procedure-items?page=&size=&keyword= → listProcedureItems()
-- GET /api/catalog/drugs?page=&size=&keyword= → listDrugCatalog()
+- GET /api/catalog/disposal-items?page=&size=&keyword= → listDisposalItems()
+- GET /api/catalog/drugs?page=&size=&keyword= → listDrugs()
 
 ---
 
@@ -52,7 +56,9 @@
 
 文件：com/ncst/hospitaloutpatient/controller/organization/DepartmentController.java
 
+- GET /api/departments/types -> listDepartmentTypes()
 - GET /api/departments?type=OUTPATIENT|EXAM|LAB|PROCEDURE|PHARMACY|REGISTRATION → listDepartments()
+- GET /api/departments/{departmentId}/roles -> listDepartmentRoles(@PathVariable departmentId)
 
 文件：com/ncst/hospitaloutpatient/controller/organization/DoctorController.java
 
@@ -60,11 +66,8 @@
 
 文件：com/ncst/hospitaloutpatient/controller/organization/AdminController.java
 
-- GET /api/admin/employees?page=&size=&keyword= → adminListEmployees()
-- POST /api/admin/employees → adminCreateEmployee()
-- PUT /api/admin/employees/{id} → adminUpdateEmployee(@PathVariable id)
-- PUT /api/admin/doctors/{doctorId}/quota → updateDoctorQuota(@PathVariable doctorId)
-- PUT /api/admin/registration/prices → updateRegistrationPrices()
+- PUT /api/admin/doctors/{doctorId}/quota → setDoctorQuota(@PathVariable doctorId)
+- PUT /api/admin/registration/prices → setRegistrationPrices()
 
 ---
 
@@ -199,3 +202,12 @@
   // region [GET] /api/xxx
   // endregion
 - 也可统一在方法上添加 @Operation(summary = "...", description = "...") 以便通过 Swagger/OpenAPI 生成可点击定位的文档。
+
+- 200 OK
+- 400xx 参数/校验错误 40001 参数错误 40002 参数缺失 40003 参数格式错误 40004 参数值超出允许范围
+- 401xx 认证失败/过期 40101 未登录 40102 登录过期 40103 账号或密码错误
+- 403xx 无权限       40301 访问被拒绝
+- 404xx 资源不存在    40401 表中无此记录
+- 409xx 并发/状态冲突（如重复结算、已执行不可退）
+- 422xx 业务校验失败（医保/库存不足等）
+- 500xx 系统内部异常
