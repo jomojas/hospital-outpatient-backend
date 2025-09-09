@@ -1,12 +1,11 @@
 package com.ncst.hospitaloutpatient.service.outpatient;
 
-import com.ncst.hospitaloutpatient.common.enums.BusinessType;
-import com.ncst.hospitaloutpatient.common.enums.TransactionType;
-import com.ncst.hospitaloutpatient.common.enums.VisitStatus;
+import com.ncst.hospitaloutpatient.common.enums.*;
 import com.ncst.hospitaloutpatient.common.exception.BusinessException;
 import com.ncst.hospitaloutpatient.mapper.outpatient.RegistrationMapper;
 import com.ncst.hospitaloutpatient.model.dto.outpatient.CreateRegistrationRequest;
 import com.ncst.hospitaloutpatient.model.dto.outpatient.CreateRegistrationResponse;
+import com.ncst.hospitaloutpatient.model.dto.outpatient.RegistrationDetailResponse;
 import com.ncst.hospitaloutpatient.model.entity.outpatient.PatientVisit;
 import com.ncst.hospitaloutpatient.model.entity.outpatient.Transaction;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class RegistrationService {
@@ -100,4 +102,77 @@ public class RegistrationService {
         response.setTransactionId(transactionId);
         return response;
     }
+
+    public RegistrationDetailResponse getRegistration(Integer id) {
+        return registrationMapper.selectRegistrationById(id);
+    }
+
+    public List<RegistrationDetailResponse> listRegistrations(
+            int offset, int pageSize,
+            LocalDate date, Integer deptId,
+            Integer doctorId, String status, String keyword,
+            String sortBy, String order
+    ) {
+        List<RegistrationDetailResponse> rawList = registrationMapper.selectRegistrations(
+                offset, pageSize, date, deptId, doctorId, status, keyword, sortBy, order
+        );
+        // 直接覆盖原字段为中文
+        return rawList.stream().peek(item -> {
+            // period
+            if (item.getPeriod() != null) {
+                try {
+                    item.setPeriod(Period.valueOf(item.getPeriod()).getLabel());
+                } catch (Exception e) { /* ignore */ }
+            }
+            // numberType
+            if (item.getNumberType() != null) {
+                item.setNumberType(NumberType.getLabelByValue(item.getNumberType()));
+            }
+            // currentStatus
+            if (item.getCurrentStatus() != null) {
+                item.setCurrentStatus(VisitStatus.getLabelByValue(item.getCurrentStatus()));
+            }
+        }).collect(Collectors.toList());
+    }
+
+
+    public long countRegistrations(
+            LocalDate date, Integer deptId,
+            Integer doctorId, String status, String keyword
+    ) {
+        return registrationMapper.countRegistrations(date, deptId, doctorId, status, keyword);
+    }
+
+    @Transactional
+    public void cancelRegistration(Integer registrationId) {
+        // 1. 更新 patient_visit 的 current_status
+        int updateCount = registrationMapper.updatePatientVisitStatusToFinished(registrationId);
+        if (updateCount == 0) {
+            throw new BusinessException(500, "更新挂号状态失败（挂号ID不存在或已完成）");
+        }
+
+        // 2. 查询挂号详情
+        RegistrationDetailResponse reg = registrationMapper.selectRegistrationById(registrationId);
+        if (reg == null) {
+            throw new BusinessException(500, "挂号记录不存在");
+        }
+
+        // 3. 插入退费交易记录
+        Transaction refund = new Transaction();
+        Integer cashierId = getCurrentStaffId();
+        refund.setBusinessType("REGISTRATION");
+        refund.setRegistrationId(registrationId);
+        refund.setPatientId(reg.getPatientId());
+        refund.setAmount(reg.getPayableAmount());
+        refund.setTransactionType("REFUND");
+        refund.setPaymentMethodId(reg.getPaymentMethodId());
+        refund.setTransactionTime(LocalDateTime.now());
+        refund.setCashierId(cashierId); // 实际应取当前登录操作员
+        refund.setRemark("退挂号费");
+        int insertCount = registrationMapper.insertTransaction(refund);
+        if (insertCount == 0) {
+            throw new BusinessException(500, "生成退费记录失败");
+        }
+    }
+
 }
