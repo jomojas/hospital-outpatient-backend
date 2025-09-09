@@ -23,7 +23,7 @@ public class DoctorController {
     @GetMapping
     public ApiResponse<List<DoctorResponse>> listDoctorsByDepartment(
             @Parameter(description = "科室ID", example = "1")
-            @RequestParam Integer departmentId
+            @RequestParam(required = false) Integer departmentId
     ) {
         List<DoctorResponse> doctors = doctorService.listDoctorsByDepartment(departmentId);
         return ApiResponse.ok(doctors);
