@@ -6,7 +6,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-@Schema(description = "结算缴费项精简DTO")
+@Schema(description = "结算/退费项精简DTO")
 public class ChargeSettleItemDTO {
     @Schema(description = "类型（ITEM-医疗项目, DRUG-药品）", example = "ITEM")
     private String type;

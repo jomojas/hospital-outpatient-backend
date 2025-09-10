@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ncst.hospitaloutpatient.mapper.billing.RefundMapper">
+
+    <!-- 可退费项目和药品列表 -->
+    <select id="selectRefundableItems" resultType="com.ncst.hospitaloutpatient.model.dto.billing.ChargeRefundableItemResponse">
+        SELECT * FROM (
+        <!-- 医疗项目 -->
+        SELECT
+        'ITEM' AS type,
+        mia.apply_id AS applyId,
+        pv.patient_id AS patientId,
+        p.name AS patientName,
+        mia.registration_id AS registrationId,
+        mia.item_id AS itemId,
+        msi.item_code AS itemCode,
+        msi.item_name AS itemName,
+        msi.item_type AS itemType,
+        NULL AS drugCategoryId,
+        msi.price AS price,
+        mia.unit AS quantity,
+        (msi.price * mia.unit) AS totalAmount,
+        msi.description AS description,
+        t.transaction_time AS chargeTime
+        FROM medical_item_apply mia
+        JOIN patient_visit pv ON mia.registration_id = pv.registration_id
+        JOIN patient p ON pv.patient_id = p.patient_id
+        JOIN medical_service_item msi ON mia.item_id = msi.item_id
+        INNER JOIN transaction t ON t.business_type = 'MEDICAL_ITEM'
+        AND t.registration_id = mia.registration_id
+        AND t.amount = msi.price * mia.unit
+        AND t.transaction_type = 'PAY'
+        WHERE mia.status IN ('UNFINISHED','RETURNED')
+        <if test="keyword != null and keyword != ''">
+            AND (p.name LIKE CONCAT('%',#{keyword},'%')
+            OR msi.item_name LIKE CONCAT('%',#{keyword},'%'))
+        </if>
+        <if test="itemType != null and itemType != ''">
+            AND msi.item_type = #{itemType}
+        </if>
+        <if test="type != null and type != ''">
+            AND #{type} = 'ITEM'
+        </if>
+        UNION ALL
+        <!-- 药品项目 -->
+        SELECT
+        'DRUG' AS type,
+        pr.prescription_id AS applyId,
+        pv.patient_id AS patientId,
+        p.name AS patientName,
+        pr.registration_id AS registrationId,
+        pr.drug_id AS itemId,
+        d.drug_code AS itemCode,
+        d.drug_name AS itemName,
+        NULL AS itemType,
+        d.category_id AS drugCategoryId,
+        d.retail_price AS price,
+        pr.quantity AS quantity,
+        (d.retail_price * pr.quantity) AS totalAmount,
+        d.description AS description,
+        t.transaction_time AS chargeTime
+        FROM prescription pr
+        JOIN patient_visit pv ON pr.registration_id = pv.registration_id
+        JOIN patient p ON pv.patient_id = p.patient_id
+        JOIN drug d ON pr.drug_id = d.drug_id
+        INNER JOIN transaction t ON t.business_type = 'DRUG'
+        AND t.registration_id = pr.registration_id
+        AND t.amount = d.retail_price * pr.quantity
+        AND t.transaction_type = 'PAY'
+        WHERE pr.status IN ('UNFINISHED','RETURNED')
+        <if test="keyword != null and keyword != ''">
+            AND (p.name LIKE CONCAT('%',#{keyword},'%')
+            OR d.drug_name LIKE CONCAT('%',#{keyword},'%'))
+        </if>
+        <if test="drugCategory != null">
+            AND d.category_id = #{drugCategory}
+        </if>
+        <if test="type != null and type != ''">
+            AND #{type} = 'DRUG'
+        </if>
+        ) AS t
+        ORDER BY
+        <choose>
+            <when test="sortBy != null and sortBy == 'totalAmount'">
+                totalAmount
+            </when>
+            <otherwise>
+                chargeTime
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="order != null and order == 'asc'">
+                ASC
+            </when>
+            <otherwise>
+                DESC
+            </otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 可退费项目和药品总数 -->
+    <select id="countRefundableItems" resultType="long">
+        SELECT SUM(cnt) FROM (
+        SELECT COUNT(1) AS cnt
+        FROM medical_item_apply mia
+        JOIN medical_service_item msi ON mia.item_id = msi.item_id
+        JOIN patient_visit pv ON mia.registration_id = pv.registration_id
+        JOIN patient p ON pv.patient_id = p.patient_id
+        INNER JOIN transaction t ON t.business_type = 'MEDICAL_ITEM'
+        AND t.registration_id = mia.registration_id
+        AND t.amount = msi.price * mia.unit
+        AND t.transaction_type = 'PAY'
+        WHERE mia.status IN ('UNFINISHED','RETURNED')
+        <if test="keyword != null and keyword != ''">
+            AND (p.name LIKE CONCAT('%',#{keyword},'%')
+            OR msi.item_name LIKE CONCAT('%',#{keyword},'%'))
+        </if>
+        <if test="itemType != null and itemType != ''">
+            AND msi.item_type = #{itemType}
+        </if>
+        <if test="type != null and type != ''">
+            AND #{type} = 'ITEM'
+        </if>
+        UNION ALL
+        SELECT COUNT(1) AS cnt
+        FROM prescription pr
+        JOIN drug d ON pr.drug_id = d.drug_id
+        JOIN patient_visit pv ON pr.registration_id = pv.registration_id
+        JOIN patient p ON pv.patient_id = p.patient_id
+        INNER JOIN transaction t ON t.business_type = 'DRUG'
+        AND t.registration_id = pr.registration_id
+        AND t.amount = d.retail_price * pr.quantity
+        AND t.transaction_type = 'PAY'
+        WHERE pr.status IN ('UNFINISHED','RETURNED')
+        <if test="keyword != null and keyword != ''">
+            AND (p.name LIKE CONCAT('%',#{keyword},'%')
+            OR d.drug_name LIKE CONCAT('%',#{keyword},'%'))
+        </if>
+        <if test="drugCategory != null">
+            AND d.category_id = #{drugCategory}
+        </if>
+        <if test="type != null and type != ''">
+            AND #{type} = 'DRUG'
+        </if>
+        ) t
+    </select>
+
+    <select id="selectPatientVisitStatus" resultType="string">
+        SELECT current_status FROM patient_visit WHERE registration_id = #{registrationId}
+    </select>
+
+    <select id="hasPayTransactionForMedicalItem" resultType="boolean">
+        SELECT COUNT(1) > 0 FROM transaction
+        WHERE business_type = 'MEDICAL_ITEM'
+          AND registration_id = #{item.registrationId}
+          AND amount = #{item.totalAmount}
+          AND transaction_type = 'PAY'
+    </select>
+
+    <select id="hasRefundTransactionForMedicalItem" resultType="boolean">
+        SELECT COUNT(1) > 0 FROM transaction
+        WHERE business_type = 'MEDICAL_ITEM'
+          AND registration_id = #{item.registrationId}
+          AND amount = #{item.totalAmount}
+          AND transaction_type = 'REFUND'
+    </select>
+
+    <select id="hasPayTransactionForDrug" resultType="boolean">
+        SELECT COUNT(1) > 0 FROM transaction
+        WHERE business_type = 'DRUG'
+          AND registration_id = #{item.registrationId}
+          AND amount = #{item.totalAmount}
+          AND transaction_type = 'PAY'
+    </select>
+
+    <select id="hasRefundTransactionForDrug" resultType="boolean">
+        SELECT COUNT(1) > 0 FROM transaction
+        WHERE business_type = 'DRUG'
+          AND registration_id = #{item.registrationId}
+          AND amount = #{item.totalAmount}
+          AND transaction_type = 'REFUND'
+    </select>
+
+    <update id="updateMedicalItemApplyStatus">
+        UPDATE medical_item_apply SET status = #{status} WHERE apply_id = #{applyId}
+    </update>
+
+    <update id="updatePrescriptionStatus">
+        UPDATE prescription SET status = #{status} WHERE prescription_id = #{applyId}
+    </update>
+
+    <select id="allItemsAndDrugsFinishedOrCancelled" resultType="boolean">
+        SELECT
+            (SELECT COUNT(1) FROM medical_item_apply WHERE registration_id = #{registrationId} AND status NOT IN ('CANCELLED', 'FINISHED')) +
+            (SELECT COUNT(1) FROM prescription WHERE registration_id = #{registrationId} AND status NOT IN ('CANCELLED', 'FINISHED'))
+                AS cnt
+    </select>
+
+    <update id="updateStatus">
+        UPDATE patient_visit
+        SET current_status = #{status}
+        WHERE registration_id = #{registrationId}
+    </update>
+
+    <select id="selectRegistrationById" resultType="com.ncst.hospitaloutpatient.model.entity.billing.Registration">
+        SELECT
+            registration_id,
+            patient_id,
+            department_id,
+            doctor_id,
+            visit_date,
+            period,
+            number_type,
+            init_quota,
+            used_quota,
+            settlement_type_id,
+            payment_method_id,
+            payable_amount,
+            medical_record_book
+        FROM registration
+        WHERE registration_id = #{registrationId}
+    </select>
+
+    <insert id="insertTransaction" parameterType="com.ncst.hospitaloutpatient.model.entity.outpatient.Transaction">
+        INSERT INTO transaction (
+            business_type, registration_id, patient_id, amount, transaction_type,
+            payment_method_id, transaction_time, cashier_id, remark, settlement_type_id
+        ) VALUES (
+                     #{businessType}, #{registrationId}, #{patientId}, #{amount}, #{transactionType},
+                     #{paymentMethodId}, #{transactionTime}, #{cashierId}, #{remark}, #{settlementTypeId}
+                 )
+    </insert>
+
+</mapper>
