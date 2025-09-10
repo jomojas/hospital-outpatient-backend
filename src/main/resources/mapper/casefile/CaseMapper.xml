@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ncst.hospitaloutpatient.mapper.casefile.CaseMapper">
+
+    <insert id="insertMedicalRecord" parameterType="com.ncst.hospitaloutpatient.model.entity.casefile.MedicalRecord" useGeneratedKeys="true" keyProperty="recordId">
+        INSERT INTO medical_record
+        (patient_no, registration_id, chief_complaint, present_history, physical_exam, diagnosis, treatment_plan, doctor_id, record_time)
+        VALUES
+            (#{patientNo}, #{registrationId}, #{chiefComplaint}, #{presentHistory}, #{physicalExam}, #{diagnosis}, #{treatmentPlan}, #{doctorId}, #{recordTime})
+    </insert>
+
+    <insert id="insertMedicalItemApply" parameterType="com.ncst.hospitaloutpatient.model.entity.casefile.MedicalItemApply" useGeneratedKeys="true" keyProperty="applyId">
+        INSERT INTO medical_item_apply
+        (record_id, registration_id, item_id, apply_type, apply_purpose, apply_site, apply_time, status, unit, remark)
+        VALUES
+            (#{recordId}, #{registrationId}, #{itemId}, #{applyType}, #{applyPurpose}, #{applySite}, #{applyTime}, #{status}, #{unit}, #{remark})
+    </insert>
+
+    <select id="selectCaseApplyResults" resultType="com.ncst.hospitaloutpatient.model.dto.casefile.CaseApplyResultDTO">
+        SELECT
+            apply_id AS applyId,
+            item_id AS itemId,
+            apply_type AS applyType,
+            apply_purpose AS applyPurpose,
+            apply_site AS applySite,
+            apply_time AS applyTime,
+            performer_id AS performerId,
+            result_recorder_id AS resultRecorderId,
+            perform_time AS performTime,
+            result,
+            status,
+            unit,
+            remark
+        FROM medical_item_apply
+        WHERE record_id = #{recordId}
+        ORDER BY apply_time ASC
+    </select>
+
+    <insert id="insertPrescription" parameterType="com.ncst.hospitaloutpatient.model.entity.casefile.Prescription" useGeneratedKeys="true" keyProperty="prescriptionId">
+        INSERT INTO prescription
+        (record_id, registration_id, drug_id, dosage, quantity, prescribe_time, status, remark)
+        VALUES
+            (#{recordId}, #{registrationId}, #{drugId}, #{dosage}, #{quantity}, #{prescribeTime}, #{status}, #{remark})
+    </insert>
+
+    <!-- 1. 通过record_id查registration_id -->
+    <select id="getRegistrationIdByRecordId" resultType="int">
+        SELECT registration_id FROM medical_record WHERE record_id = #{recordId}
+    </select>
+
+    <!-- 2. 查挂号费，假设registration表里payable_amount字段为挂号费 -->
+    <select id="selectRegistrationFee" resultType="java.math.BigDecimal">
+        SELECT payable_amount FROM registration WHERE registration_id = #{registrationId}
+    </select>
+
+    <!-- 3. 查医疗项目费（join medical_service_item） -->
+    <select id="selectMedicalItemFees" resultType="com.ncst.hospitaloutpatient.model.dto.casefile.ItemFeeDTO">
+        SELECT
+            msi.item_name AS itemName,
+            msi.price AS price,
+            mia.unit AS unit,
+            (msi.price * mia.unit) AS amount
+        FROM medical_item_apply mia
+                 JOIN medical_service_item msi ON mia.item_id = msi.item_id
+        WHERE mia.record_id = #{recordId}
+    </select>
+
+    <!-- 4. 查处方药品费（join drug） -->
+    <select id="selectPrescriptionFees" resultType="com.ncst.hospitaloutpatient.model.dto.casefile.DrugFeeDTO">
+        SELECT
+            d.drug_name AS drugName,
+            d.retail_price AS price,
+            p.quantity AS quantity,
+            (d.retail_price * p.quantity) AS amount
+        FROM prescription p
+                 JOIN drug d ON p.drug_id = d.drug_id
+        WHERE p.record_id = #{recordId}
+    </select>
+
+</mapper>
