@@ -94,7 +94,7 @@
 
 文件：com/ncst/hospitaloutpatient/controller/billing/ChargeController.java
 
-- GET /api/charges/items?name=&medicalNo=&page=&size= → listChargeItems()
+- GET /api/charges/items?keyword=&page=&size=&sortBy=&order= → listChargeItems()
 - POST /api/charges/settle → settleCharges()
 
 文件：com/ncst/hospitaloutpatient/controller/billing/RefundController.java

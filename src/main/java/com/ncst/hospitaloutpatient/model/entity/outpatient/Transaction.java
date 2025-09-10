@@ -16,4 +16,5 @@ public class Transaction {
     private LocalDateTime transactionTime;
     private Integer cashierId;
     private String remark;
+    private Integer settlementTypeId;
 }

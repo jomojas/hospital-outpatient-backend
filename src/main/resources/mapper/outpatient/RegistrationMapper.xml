@@ -37,10 +37,10 @@
     <insert id="insertTransaction" parameterType="com.ncst.hospitaloutpatient.model.entity.outpatient.Transaction" useGeneratedKeys="true" keyProperty="transactionId">
         INSERT INTO transaction (
             business_type, registration_id, patient_id, amount,
-            transaction_type, payment_method_id, transaction_time, cashier_id, remark
+            transaction_type, payment_method_id, transaction_time, cashier_id, remark, settlement_type_id
         ) VALUES (
                      #{businessType}, #{registrationId}, #{patientId}, #{amount},
-                     #{transactionType}, #{paymentMethodId}, #{transactionTime}, #{cashierId}, #{remark}
+                     #{transactionType}, #{paymentMethodId}, #{transactionTime}, #{cashierId}, #{remark}, #{settlementTypeId}
                  )
     </insert>
 

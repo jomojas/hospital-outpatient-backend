@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ncst.hospitaloutpatient.mapper.billing.ChargeMapper">
+
+    <select id="selectChargeItems" resultType="com.ncst.hospitaloutpatient.model.dto.billing.ChargeItemResponse">
+        <choose>
+            <when test="type == null or type == ''">
+                <!-- 查询项目和药品 -->
+                (SELECT
+                'ITEM' AS type,
+                mia.apply_id AS applyId,
+                r.patient_id AS patientId,
+                p.name AS patientName,
+                mia.registration_id AS registrationId,
+                mi.item_id AS itemId,
+                mi.item_code AS itemCode,
+                mi.item_name AS itemName,
+                mi.item_type AS itemType,
+                NULL AS drugCategoryId,
+                mi.price AS price,
+                1 AS quantity,
+                mi.price AS totalAmount,
+                mi.description AS description,
+                mia.apply_time AS createTime
+                FROM medical_item_apply mia
+                LEFT JOIN registration r ON mia.registration_id = r.registration_id
+                LEFT JOIN patient p ON r.patient_id = p.patient_id
+                LEFT JOIN medical_service_item mi ON mia.item_id = mi.item_id
+                WHERE mia.status = 'PENDING_PAYMENT'
+                <if test="keyword != null and keyword != ''">
+                    AND (
+                    p.name LIKE CONCAT('%', #{keyword}, '%')
+                    OR mi.item_name LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </if>
+                <if test="itemType != null and itemType != ''">
+                    AND mi.item_type = #{itemType}
+                </if>
+                )
+                UNION ALL
+                (SELECT
+                'DRUG' AS type,
+                pr.prescription_id AS applyId,
+                r2.patient_id AS patientId,
+                p2.name AS patientName,
+                pr.registration_id AS registrationId,
+                d.drug_id AS itemId,
+                d.drug_code AS itemCode,
+                d.drug_name AS itemName,
+                NULL AS itemType,
+                d.category_id AS drugCategoryId,
+                d.retail_price AS price,
+                pr.quantity AS quantity,
+                d.retail_price * pr.quantity AS totalAmount,
+                d.description AS description,
+                pr.prescribe_time AS createTime
+                FROM prescription pr
+                LEFT JOIN registration r2 ON pr.registration_id = r2.registration_id
+                LEFT JOIN patient p2 ON r2.patient_id = p2.patient_id
+                LEFT JOIN drug d ON pr.drug_id = d.drug_id
+                WHERE pr.status = 'PENDING_PAYMENT'
+                <if test="keyword != null and keyword != ''">
+                    AND (
+                    p2.name LIKE CONCAT('%', #{keyword}, '%')
+                    OR d.drug_name LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </if>
+                <if test="drugCategory != null">
+                    AND d.category_id = #{drugCategory}
+                </if>
+                )
+            </when>
+            <when test="type == 'ITEM'">
+                SELECT
+                'ITEM' AS type,
+                mia.apply_id AS applyId,
+                r.patient_id AS patientId,
+                p.name AS patientName,
+                mia.registration_id AS registrationId,
+                mi.item_id AS itemId,
+                mi.item_code AS itemCode,
+                mi.item_name AS itemName,
+                mi.item_type AS itemType,
+                NULL AS drugCategoryId,
+                mi.price AS price,
+                1 AS quantity,
+                mi.price AS totalAmount,
+                mi.description AS description,
+                mia.apply_time AS createTime
+                FROM medical_item_apply mia
+                LEFT JOIN registration r ON mia.registration_id = r.registration_id
+                LEFT JOIN patient p ON r.patient_id = p.patient_id
+                LEFT JOIN medical_service_item mi ON mia.item_id = mi.item_id
+                WHERE mia.status = 'PENDING_PAYMENT'
+                <if test="keyword != null and keyword != ''">
+                    AND (
+                    p.name LIKE CONCAT('%', #{keyword}, '%')
+                    OR mi.item_name LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </if>
+                <if test="itemType != null and itemType != ''">
+                    AND mi.item_type = #{itemType}
+                </if>
+            </when>
+            <when test="type == 'DRUG'">
+                SELECT
+                'DRUG' AS type,
+                pr.prescription_id AS applyId,
+                r2.patient_id AS patientId,
+                p2.name AS patientName,
+                pr.registration_id AS registrationId,
+                d.drug_id AS itemId,
+                d.drug_code AS itemCode,
+                d.drug_name AS itemName,
+                NULL AS itemType,
+                d.category_id AS drugCategoryId,
+                d.retail_price AS price,
+                pr.quantity AS quantity,
+                d.retail_price * pr.quantity AS totalAmount,
+                d.description AS description,
+                pr.prescribe_time AS createTime
+                FROM prescription pr
+                LEFT JOIN registration r2 ON pr.registration_id = r2.registration_id
+                LEFT JOIN patient p2 ON r2.patient_id = p2.patient_id
+                LEFT JOIN drug d ON pr.drug_id = d.drug_id
+                WHERE pr.status = 'PENDING_PAYMENT'
+                <if test="keyword != null and keyword != ''">
+                    AND (
+                    p2.name LIKE CONCAT('%', #{keyword}, '%')
+                    OR d.drug_name LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </if>
+                <if test="drugCategory != null">
+                    AND d.category_id = #{drugCategory}
+                </if>
+            </when>
+        </choose>
+        <choose>
+            <when test="sortBy == 'totalAmount'">
+                ORDER BY totalAmount
+            </when>
+            <when test="sortBy == 'createTime' or sortBy == null or sortBy == ''">
+                ORDER BY createTime
+            </when>
+            <otherwise>
+                ORDER BY createTime
+            </otherwise>
+        </choose>
+        <if test="order != null and order.toLowerCase() == 'asc'">
+            ASC
+        </if>
+        <if test="order == null or order.toLowerCase() != 'asc'">
+            DESC
+        </if>
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countChargeItems" resultType="long">
+        <choose>
+            <when test="type == null or type == ''">
+                SELECT SUM(cnt) AS total FROM (
+                SELECT COUNT(1) AS cnt
+                FROM medical_item_apply mia
+                LEFT JOIN registration r ON mia.registration_id = r.registration_id
+                LEFT JOIN patient p ON r.patient_id = p.patient_id
+                LEFT JOIN medical_service_item mi ON mia.item_id = mi.item_id
+                WHERE mia.status = 'PENDING_PAYMENT'
+                <if test="keyword != null and keyword != ''">
+                    AND (
+                    p.name LIKE CONCAT('%', #{keyword}, '%')
+                    OR mi.item_name LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </if>
+                <if test="itemType != null and itemType != ''">
+                    AND mi.item_type = #{itemType}
+                </if>
+                UNION ALL
+                SELECT COUNT(1) AS cnt
+                FROM prescription pr
+                LEFT JOIN registration r2 ON pr.registration_id = r2.registration_id
+                LEFT JOIN patient p2 ON r2.patient_id = p2.patient_id
+                LEFT JOIN drug d ON pr.drug_id = d.drug_id
+                WHERE pr.status = 'PENDING_PAYMENT'
+                <if test="keyword != null and keyword != ''">
+                    AND (
+                    p2.name LIKE CONCAT('%', #{keyword}, '%')
+                    OR d.drug_name LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </if>
+                <if test="drugCategory != null">
+                    AND d.category_id = #{drugCategory}
+                </if>
+                ) t
+            </when>
+            <when test="type == 'ITEM'">
+                SELECT COUNT(1)
+                FROM medical_item_apply mia
+                LEFT JOIN registration r ON mia.registration_id = r.registration_id
+                LEFT JOIN patient p ON r.patient_id = p.patient_id
+                LEFT JOIN medical_service_item mi ON mia.item_id = mi.item_id
+                WHERE mia.status = 'PENDING_PAYMENT'
+                <if test="keyword != null and keyword != ''">
+                    AND (
+                    p.name LIKE CONCAT('%', #{keyword}, '%')
+                    OR mi.item_name LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </if>
+                <if test="itemType != null and itemType != ''">
+                    AND mi.item_type = #{itemType}
+                </if>
+            </when>
+            <when test="type == 'DRUG'">
+                SELECT COUNT(1)
+                FROM prescription pr
+                LEFT JOIN registration r2 ON pr.registration_id = r2.registration_id
+                LEFT JOIN patient p2 ON r2.patient_id = p2.patient_id
+                LEFT JOIN drug d ON pr.drug_id = d.drug_id
+                WHERE pr.status = 'PENDING_PAYMENT'
+                <if test="keyword != null and keyword != ''">
+                    AND (
+                    p2.name LIKE CONCAT('%', #{keyword}, '%')
+                    OR d.drug_name LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </if>
+                <if test="drugCategory != null">
+                    AND d.category_id = #{drugCategory}
+                </if>
+            </when>
+        </choose>
+    </select>
+
+    <!-- 查待缴费医疗项目详情 -->
+    <select id="selectMedicalItemForSettle" resultType="com.ncst.hospitaloutpatient.model.dto.billing.ChargeSettleItemDTO">
+        SELECT
+            mia.apply_id AS applyId,
+            mia.registration_id AS registrationId,
+            mia.item_id AS itemId,
+            r.patient_id AS patientId,
+            1 AS quantity,
+            mi.price AS price,
+            mi.price AS totalAmount,
+            mia.status AS status
+        FROM medical_item_apply mia
+                 LEFT JOIN registration r ON mia.registration_id = r.registration_id
+                 LEFT JOIN medical_service_item mi ON mia.item_id = mi.item_id
+        WHERE mia.apply_id = #{applyId}
+    </select>
+
+    <!-- 查待缴费处方药详情 -->
+    <select id="selectPrescriptionForSettle" resultType="com.ncst.hospitaloutpatient.model.dto.billing.ChargeSettleItemDTO">
+        SELECT
+            pr.prescription_id AS applyId,
+            pr.registration_id AS registrationId,
+            pr.drug_id AS itemId,
+            r.patient_id AS patientId,
+            pr.quantity AS quantity,
+            d.retail_price AS price,
+            d.retail_price * pr.quantity AS totalAmount,
+            pr.status AS status
+        FROM prescription pr
+                 LEFT JOIN registration r ON pr.registration_id = r.registration_id
+                 LEFT JOIN drug d ON pr.drug_id = d.drug_id
+        WHERE pr.prescription_id = #{applyId}
+    </select>
+
+    <!-- 插入交易记录 -->
+    <insert id="insertTransaction" parameterType="com.ncst.hospitaloutpatient.model.entity.outpatient.Transaction">
+        INSERT INTO transaction (
+            business_type, registration_id, patient_id, amount, transaction_type,
+            payment_method_id, transaction_time, cashier_id, remark, settlement_type_id
+        ) VALUES (
+                     #{businessType}, #{registrationId}, #{patientId}, #{amount}, #{transactionType},
+                     #{paymentMethodId}, #{transactionTime}, #{cashierId}, #{remark}, #{settlementTypeId}
+                 )
+    </insert>
+
+    <!-- 更新医疗项目状态 -->
+    <update id="updateMedicalItemApplyStatus">
+        UPDATE medical_item_apply
+        SET status = #{status}
+        WHERE apply_id = #{applyId}
+    </update>
+
+    <!-- 更新处方状态 -->
+    <update id="updatePrescriptionStatus">
+        UPDATE prescription
+        SET status = #{status}
+        WHERE prescription_id = #{prescriptionId}
+    </update>
+
+    <!-- 统计该挂号下未缴费医疗项目数 -->
+    <select id="countUnpaidMedicalItem" resultType="int">
+        SELECT COUNT(1)
+        FROM medical_item_apply
+        WHERE registration_id = #{registrationId} AND status = 'PENDING_PAYMENT'
+    </select>
+
+    <!-- 统计该挂号下未缴费处方数 -->
+    <select id="countUnpaidPrescription" resultType="int">
+        SELECT COUNT(1)
+        FROM prescription
+        WHERE registration_id = #{registrationId} AND status = 'PENDING_PAYMENT'
+    </select>
+
+    <!-- 更新 patient_visit 状态 -->
+    <update id="updatePatientVisitStatus">
+        UPDATE patient_visit
+        SET current_status = #{status}, updated_at = NOW(), status_changed_at = NOW()
+        WHERE registration_id = #{registrationId}
+    </update>
+
+</mapper>

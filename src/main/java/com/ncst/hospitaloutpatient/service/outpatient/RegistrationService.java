@@ -88,6 +88,7 @@ public class RegistrationService {
         transaction.setTransactionTime(now);
         transaction.setCashierId(cashierId); // 可根据登录用户获取
         transaction.setRemark("挂号费");
+        transaction.setSettlementTypeId(request.getSettlementTypeId());
 
         int transInserted = registrationMapper.insertTransaction(transaction);
         Integer transactionId = transaction.getTransactionId();
@@ -169,6 +170,7 @@ public class RegistrationService {
         refund.setTransactionTime(LocalDateTime.now());
         refund.setCashierId(cashierId); // 实际应取当前登录操作员
         refund.setRemark("退挂号费");
+        refund.setSettlementTypeId(reg.getSettlementTypeId());
         int insertCount = registrationMapper.insertTransaction(refund);
         if (insertCount == 0) {
             throw new BusinessException(500, "生成退费记录失败");
