@@ -129,9 +129,8 @@
 - POST /api/exam/applies/{applyId}/execute → executeExam(@PathVariable applyId)
 - POST /api/exam/applies/{applyId}/result → submitExamResult(@PathVariable applyId)
 - GET /api/exam/departments → listExamDepartments()
-- GET /api/exam/staffs → listExamStaffs()
-- GET /api/exam/records?keyword=&page=&size= → listMyExamRecords()
-- GET /api/exam/patients/{patientId}/records → listMyExamRecordsByPatient(@PathVariable patientId)
+- GET /api/exam/staffs/{departmentId} → listExamStaffs()
+- GET /api/exam/records?keyword=&page=&size= → listExamRecords()
 
 文件：com/ncst/hospitaloutpatient/controller/medicalitem/LabController.java
 
@@ -140,21 +139,18 @@
 - POST /api/lab/applies/{applyId}/execute → executeLab(@PathVariable applyId)
 - POST /api/lab/applies/{applyId}/result → submitLabResult(@PathVariable applyId)
 - GET /api/lab/departments → listLabDepartments()
-- GET /api/lab/staffs → listLabStaffs()
-- GET /api/lab/records?keyword=&page=&size= → listMyLabRecords()
-- GET /api/lab/patients/{patientId}/records → listMyLabRecordsByPatient(@PathVariable patientId)
+- GET /api/lab/staffs/{departmentId} → listLabStaffs()
+- GET /api/lab/records?keyword=&page=&size= → listLabRecords()
 
-文件：com/ncst/hospitaloutpatient/controller/medicalitem/ProcedureController.java
+文件：com/ncst/hospitaloutpatient/controller/medicalitem/DisposalController.java
 
-- GET /api/procedure/applies?status=UNFINISHED&page=&size= → listProcedureApplies()
-- POST /api/procedure/applies/{applyId}/cancel → cancelProcedureApply(@PathVariable applyId)
-- POST /api/procedure/applies/{applyId}/execute → executeProcedure(@PathVariable applyId)
-- POST /api/procedure/applies/{applyId}/result → submitProcedureResult(@PathVariable applyId)
-- GET /api/procedure/departments → listProcedureDepartments()
-- GET /api/procedure/staffs → listProcedureStaffs()
-- GET /api/procedure/records?keyword=&page=&size= → listMyProcedureRecords()
-- GET /api/procedure/patients/{patientId}/records → listMyProcedureRecordsByPatient(@PathVariable patientId)
-
+- GET /api/disposal/applies?status=UNFINISHED&page=&size= → listDisposalApplies()
+- POST /api/disposal/applies/{applyId}/cancel → cancelDisposalApply(@PathVariable applyId)
+- POST /api/disposal/applies/{applyId}/execute → executeDisposal(@PathVariable applyId)
+- POST /api/disposal/applies/{applyId}/result → submitDisposalResult(@PathVariable applyId)
+- GET /api/disposal/departments → listDisposalDepartments()
+- GET /api/disposal/staffs/{departmentId} → listDisposalStaffs()
+- GET /api/disposal/records?keyword=&page=&size= → listDisposalRecords()
 ---
 
 ## 10) pharmacy 模块

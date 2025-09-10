@@ -109,8 +109,8 @@ public class RefundService {
             }
         }
         Integer registrationId = refundItems.get(0).getRegistrationId();
-        boolean allFinished = refundMapper.allItemsAndDrugsFinishedOrCancelled(registrationId);
-        if (allFinished) {
+        int unfinishedCount = refundMapper.allItemsAndDrugsFinishedOrCancelled(registrationId);
+        if (unfinishedCount == 0) {
             refundMapper.updateStatus(registrationId, "FINISHED");
         }
     }

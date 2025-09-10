@@ -9,6 +9,7 @@ import com.ncst.hospitaloutpatient.model.entity.casefile.MedicalRecord;
 import com.ncst.hospitaloutpatient.model.entity.casefile.Prescription;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import java.math.BigDecimal;
@@ -20,6 +21,7 @@ public class CaseService {
     @Autowired
     private CaseMapper caseMapper;
 
+    @Transactional
     public void createMedicalRecord(MedicalRecordCreateRequest request) {
         MedicalRecord record = new MedicalRecord();
         record.setPatientNo(request.getPatientNo());
@@ -32,11 +34,18 @@ public class CaseService {
         record.setDoctorId(request.getDoctorId());
         record.setRecordTime(LocalDateTime.parse(request.getRecordTime()));
         int result = caseMapper.insertMedicalRecord(record);
-        if(result != 1) {
+        if (result != 1) {
             throw new BusinessException(500, "创建病案失败");
+        }
+
+        // 更新patient_visit的status为“已初诊”
+        int updateResult = caseMapper.updateStatusToInitialConsultationDone(request.getRegistrationId());
+        if (updateResult != 1) {
+            throw new BusinessException(500, "更新初诊状态失败");
         }
     }
 
+    @Transactional
     public void submitApplies(Integer recordId, MedicalItemApplyRequest request) {
         for (MedicalItemApplyRequest.ApplyItem item : request.getItems()) {
             MedicalItemApply apply = new MedicalItemApply();
@@ -54,6 +63,12 @@ public class CaseService {
             if(result != 1) {
                 throw new BusinessException(500, "医疗项目申请提交失败");
             }
+        }
+
+        // 更新 patient_visit 的 current_status 和 status_changed_at
+        int updateResult = caseMapper.updateStatusToWaitingForProjectPayment(request.getRegistrationId());
+        if(updateResult != 1) {
+            throw new BusinessException(500, "更新就诊状态失败");
         }
     }
 

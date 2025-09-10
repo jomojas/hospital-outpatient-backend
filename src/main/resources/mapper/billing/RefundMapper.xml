@@ -193,7 +193,7 @@
         UPDATE prescription SET status = #{status} WHERE prescription_id = #{applyId}
     </update>
 
-    <select id="allItemsAndDrugsFinishedOrCancelled" resultType="boolean">
+    <select id="allItemsAndDrugsFinishedOrCancelled" resultType="int">
         SELECT
             (SELECT COUNT(1) FROM medical_item_apply WHERE registration_id = #{registrationId} AND status NOT IN ('CANCELLED', 'FINISHED')) +
             (SELECT COUNT(1) FROM prescription WHERE registration_id = #{registrationId} AND status NOT IN ('CANCELLED', 'FINISHED'))

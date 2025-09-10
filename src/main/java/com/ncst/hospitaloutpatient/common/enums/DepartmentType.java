@@ -7,7 +7,7 @@ public enum DepartmentType {
     OUTPATIENT("门诊"),
     EXAM("检查"),
     LAB("检验"),
-    PROCEDURE("处置"),
+    DISPOSAL("处置"),
     PHARMACY("药房"),
     REGISTRATION("挂号收费"),
     INFORMATION("信息科");

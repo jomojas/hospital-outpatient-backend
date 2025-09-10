@@ -31,4 +31,8 @@ public interface CaseMapper {
     List<ItemFeeDTO> selectMedicalItemFees(@Param("recordId") Integer recordId);
 
     List<DrugFeeDTO> selectPrescriptionFees(@Param("recordId") Integer recordId);
+
+    int updateStatusToInitialConsultationDone(@Param("registrationId") Integer registrationId);
+
+    int updateStatusToWaitingForProjectPayment(@Param("registrationId") Integer registrationId);
 }

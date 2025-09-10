@@ -79,4 +79,18 @@
         WHERE p.record_id = #{recordId}
     </select>
 
+    <update id="updateStatusToInitialConsultationDone">
+        UPDATE patient_visit
+        SET current_status = 'INITIAL_CONSULTATION_DONE',
+            status_changed_at = NOW()
+        WHERE registration_id = #{registrationId}
+    </update>
+
+    <update id="updateStatusToWaitingForProjectPayment">
+        UPDATE patient_visit
+        SET current_status = 'WAITING_FOR_PROJECT_PAYMENT',
+            status_changed_at = NOW()
+        WHERE registration_id = #{registrationId}
+    </update>
+
 </mapper>

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ncst.hospitaloutpatient.mapper.medicalitem.LabMapper">
+
+    <select id="selectLabApplies" resultType="com.ncst.hospitaloutpatient.model.dto.medicalitem.ExamApplyDTO">
+        SELECT
+        mia.apply_id AS applyId,
+        mia.record_id AS recordId,
+        mia.registration_id AS registrationId,
+        mr.patient_no AS patientNo,
+        p.name AS patientName,
+        p.gender AS gender,
+        mia.item_id AS itemId,
+        msi.item_name AS itemName,
+        mia.apply_purpose AS applyPurpose,
+        mia.apply_site AS applySite,
+        mia.apply_time AS applyTime,
+        mia.status,
+        mia.unit,
+        mia.remark
+        FROM medical_item_apply mia
+        JOIN medical_record mr ON mia.record_id = mr.record_id
+        JOIN patient p ON mr.patient_no = p.patient_no
+        JOIN medical_service_item msi ON mia.item_id = msi.item_id
+        WHERE mia.apply_type = 'LAB'
+        AND mia.status = 'UNFINISHED'
+        <if test="keyword != null and keyword != ''">
+            AND (p.name LIKE CONCAT('%', #{keyword}, '%')
+            OR msi.item_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'patientName'">
+                p.name
+            </when>
+            <otherwise>
+                mia.apply_time
+            </otherwise>
+        </choose>
+        <if test="order == 'asc'">
+            ASC
+        </if>
+        <if test="order == 'desc'">
+            DESC
+        </if>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countLabApplies" resultType="long">
+        SELECT COUNT(1)
+        FROM medical_item_apply mia
+        JOIN medical_record mr ON mia.record_id = mr.record_id
+        JOIN patient p ON mr.patient_no = p.patient_no
+        JOIN medical_service_item msi ON mia.item_id = msi.item_id
+        WHERE mia.apply_type = 'LAB'
+        AND mia.status = 'UNFINISHED'
+        <if test="keyword != null and keyword != ''">
+            AND (p.name LIKE CONCAT('%', #{keyword}, '%')
+            OR msi.item_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+    </select>
+
+    <select id="getRegistrationIdByApplyId" resultType="int">
+        SELECT registration_id
+        FROM medical_item_apply
+        WHERE apply_id = #{applyId}
+    </select>
+
+    <update id="cancelLabApply">
+        UPDATE medical_item_apply
+        SET status = 'CANCELLED'
+        WHERE apply_id = #{applyId}
+          AND status != 'CANCELLED'
+    </update>
+
+    <select id="getCurrentStatus" resultType="string">
+        SELECT current_status
+        FROM patient_visit
+        WHERE registration_id = #{registrationId}
+    </select>
+
+    <insert id="insert" parameterType="com.ncst.hospitaloutpatient.model.entity.medicalItem.MedicalItemOperationLog">
+        INSERT INTO medical_item_operation_log
+        (apply_id, operator_id, operate_time, operate_type, item_id, item_name, item_type, patient_no, patient_name, remark)
+        VALUES
+            (#{applyId}, #{operatorId}, NOW(), #{operateType}, #{itemId}, #{itemName}, #{itemType}, #{patientNo}, #{patientName}, #{remark})
+    </insert>
+
+    <select id="getApplyInfoForLog" resultType="com.ncst.hospitaloutpatient.model.dto.medicalitem.ItemApplyInfoForLog">
+        SELECT
+            a.item_id,
+            b.item_name,
+            b.item_type,
+            p.patient_no,
+            p.name AS patient_name
+        FROM medical_item_apply a
+                 LEFT JOIN medical_service_item b ON a.item_id = b.item_id
+                 LEFT JOIN registration r ON a.registration_id = r.registration_id
+                 LEFT JOIN patient p ON r.patient_id = p.patient_id
+        WHERE a.apply_id = #{applyId}
+    </select>
+
+    <update id="updateCurrentStatus">
+        UPDATE patient_visit SET current_status = #{status} WHERE registration_id = #{registrationId}
+    </update>
+
+    <select id="getApplyStatusById" resultType="string">
+        SELECT status FROM medical_item_apply WHERE apply_id = #{applyId}
+    </select>
+
+    <update id="updateResultAndStatus">
+        UPDATE medical_item_apply
+        SET result = #{result}, status = 'FINISHED'
+        WHERE apply_id = #{applyId}
+    </update>
+
+    <insert id="insertOperationLog" parameterType="com.ncst.hospitaloutpatient.model.entity.medicalItem.MedicalItemOperationLog">
+        INSERT INTO medical_item_operation_log
+        (apply_id, operator_id, operate_time, operate_type, item_id, item_name, item_type, patient_no, patient_name, remark)
+        VALUES
+            (#{applyId}, #{operatorId}, NOW(), #{operateType}, #{itemId}, #{itemName}, #{itemType}, #{patientNo}, #{patientName}, #{remark})
+    </insert>
+
+    <update id="updatePatientVisitStatus">
+        UPDATE patient_visit
+        SET current_status = #{status}
+        WHERE registration_id = #{registrationId}
+    </update>
+
+    <select id="countUnfinishedApplies" resultType="int">
+        SELECT COUNT(1)
+        FROM medical_item_apply
+        WHERE registration_id = #{registrationId} AND status NOT IN ('FINISHED', 'CANCELLED')
+    </select>
+
+    <select id="listDepartmentsByType" resultType="com.ncst.hospitaloutpatient.model.dto.medicalitem.DepartmentSimpleDTO">
+        SELECT department_id AS departmentId,
+               department_name AS departmentName,
+               type
+        FROM department
+        WHERE type = #{type}
+    </select>
+
+    <select id="listStaffsByDepartmentId" resultType="com.ncst.hospitaloutpatient.model.dto.medicalitem.StaffSimpleDTO">
+        SELECT
+            staff_id AS staffId,
+            name,
+            phone,
+            id_card AS idCard,
+            department_id AS departmentId,
+            description,
+            role_id AS roleId
+        FROM staff
+        WHERE department_id = #{departmentId}
+    </select>
+
+</mapper>

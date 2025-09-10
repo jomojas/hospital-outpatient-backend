@@ -41,7 +41,7 @@ public interface RefundMapper {
 
     void updatePrescriptionStatus(@Param("applyId") Integer applyId, @Param("status") String status);
 
-    boolean allItemsAndDrugsFinishedOrCancelled(@Param("registrationId") Integer registrationId);
+    int allItemsAndDrugsFinishedOrCancelled(@Param("registrationId") Integer registrationId);
 
     int insertTransaction(Transaction tx);
 
