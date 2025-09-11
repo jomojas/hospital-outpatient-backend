@@ -158,10 +158,9 @@
 文件：com/ncst/hospitaloutpatient/controller/pharmacy/PharmacyController.java
 
 - GET /api/pharmacy/dispense/pending?keyword=&page=&size= → listDispensePending()
-- GET /api/pharmacy/prescriptions?patientMedicalNo=&status=UNFINISHED|FINISHED → listPrescriptionsByPatient()
 - POST /api/pharmacy/dispense → dispenseDrugs()
 - POST /api/pharmacy/return → returnDrugs()
-- GET /api/pharmacy/records?keyword=&page=&size= → listMyPharmacyRecords()
+- GET /api/pharmacy/records?keyword=&page=&size= → listPharmacyRecords()
 
 ---
 

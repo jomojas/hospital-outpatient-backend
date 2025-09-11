@@ -93,4 +93,16 @@
         WHERE registration_id = #{registrationId}
     </update>
 
+    <!-- 查 registration_id -->
+    <select id="selectRegistrationIdByRecordId" resultType="int">
+        SELECT registration_id FROM medical_record WHERE record_id = #{recordId}
+    </select>
+
+    <!-- 更新 patient_visit 的 current_status -->
+    <update id="updatePatientVisitStatusByRegistrationId">
+        UPDATE patient_visit
+        SET current_status = #{status}
+        WHERE registration_id = #{registrationId}
+    </update>
+
 </mapper>

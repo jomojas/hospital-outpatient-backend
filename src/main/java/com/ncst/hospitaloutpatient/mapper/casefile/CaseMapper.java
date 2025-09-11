@@ -35,4 +35,15 @@ public interface CaseMapper {
     int updateStatusToInitialConsultationDone(@Param("registrationId") Integer registrationId);
 
     int updateStatusToWaitingForProjectPayment(@Param("registrationId") Integer registrationId);
+
+//    int updatePatientVisitStatus(@Param("recordId") Integer recordId,
+//                                 @Param("status") String status);
+
+
+    // 新增：查 registration_id
+    Integer selectRegistrationIdByRecordId(@Param("recordId") Integer recordId);
+
+    // 新增：根据 registration_id 更新 patient_visit 状态
+    int updatePatientVisitStatusByRegistrationId(@Param("registrationId") Integer registrationId,
+                                                 @Param("status") String status);
 }

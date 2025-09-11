@@ -73,7 +73,17 @@ public class CaseService {
     }
 
     public List<CaseApplyResultDTO> listCaseResults(Integer recordId) {
-        return caseMapper.selectCaseApplyResults(recordId);
+        // 先查结果
+        List<CaseApplyResultDTO> results = caseMapper.selectCaseApplyResults(recordId);
+        // 更新 patient_visit 状态为 REVISITED
+        Integer registrationId = caseMapper.selectRegistrationIdByRecordId(recordId);
+        if (registrationId != null) {
+            int row = caseMapper.updatePatientVisitStatusByRegistrationId(registrationId, "REVISITED");
+            if (row != 1) {
+                throw new BusinessException(500, "更新就诊状态失败");
+            }
+        }
+        return results;
     }
 
     public void createPrescriptions(Integer recordId, PrescriptionCreateRequest request) {
@@ -90,6 +100,14 @@ public class CaseService {
             int result = caseMapper.insertPrescription(prescription);
             if(result != 1) {
                 throw new BusinessException(500, "处方开具失败");
+            }
+        }
+        // 处方全部开具成功后，更新 patient_visit 状态为 WAITING_FOR_PRESCRIPTION_PAYMENT
+        Integer registrationId = caseMapper.selectRegistrationIdByRecordId(recordId);
+        if (registrationId != null) {
+            int row = caseMapper.updatePatientVisitStatusByRegistrationId(registrationId, "WAITING_FOR_PRESCRIPTION_PAYMENT");
+            if (row != 1) {
+                throw new BusinessException(500, "更新就诊状态失败");
             }
         }
     }

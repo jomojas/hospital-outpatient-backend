@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ncst.hospitaloutpatient.mapper.pharmacy.PharmacyMapper">
+
+    <select id="listDispensePending" resultType="com.ncst.hospitaloutpatient.model.dto.pharmacy.DispensePendingDTO">
+        SELECT
+        p.prescription_id AS prescriptionId,
+        pa.name AS patientName,
+        pa.gender,
+        pa.patient_no AS patientNo,
+        p.drug_id,
+        d.drug_name AS drugName,
+        c.category_name AS drugCategory,
+        p.dosage,
+        p.quantity,
+        p.prescribe_time,
+        p.remark
+        FROM prescription p
+        JOIN registration r ON p.registration_id = r.registration_id
+        JOIN patient pa ON r.patient_id = pa.patient_id
+        JOIN drug d ON p.drug_id = d.drug_id
+        JOIN drug_category c ON d.category_id = c.category_id
+        WHERE p.status = 'UNFINISHED'
+        <if test="keyword != null and keyword != ''">
+            AND (
+            pa.name LIKE CONCAT('%', #{keyword}, '%')
+            OR d.drug_name LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        <choose>
+            <when test="sortBy == 'patientName'">
+                ORDER BY CONVERT(pa.name USING gbk)
+            </when>
+            <otherwise>
+                ORDER BY p.prescribe_time
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="order == 'asc'">
+                ASC
+            </when>
+            <otherwise>
+                DESC
+            </otherwise>
+        </choose>
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countDispensePending" resultType="long">
+        SELECT COUNT(1)
+        FROM prescription p
+        JOIN registration r ON p.registration_id = r.registration_id
+        JOIN patient pa ON r.patient_id = pa.patient_id
+        JOIN drug d ON p.drug_id = d.drug_id
+        JOIN drug_category c ON d.category_id = c.category_id
+        WHERE p.status = 'UNFINISHED'
+        <if test="keyword != null and keyword != ''">
+            AND (
+            pa.name LIKE CONCAT('%', #{keyword}, '%')
+            OR d.drug_name LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+    </select>
+
+    <!-- 1. 更新处方为已发药 -->
+    <update id="updatePrescriptionStatusToFinished">
+        UPDATE prescription
+        SET status = 'FINISHED'
+        WHERE prescription_id = #{prescriptionId}
+    </update>
+
+    <!-- 2. 查找registration_id -->
+    <select id="selectRegistrationIdByPrescriptionId" resultType="int">
+        SELECT registration_id FROM prescription WHERE prescription_id = #{prescriptionId}
+    </select>
+
+    <!-- 3. 检查是否还有未取药处方 -->
+    <select id="countUnfinishedPrescriptions" resultType="int">
+        SELECT COUNT(*) FROM prescription
+        WHERE registration_id = #{registrationId} AND status != 'FINISHED'
+    </select>
+
+    <!-- 4. 更新patient_visit状态 -->
+    <update id="updatePatientVisitStatusByRegistrationId">
+        UPDATE patient_visit
+        SET current_status = #{status}
+        WHERE registration_id = #{registrationId}
+    </update>
+
+    <update id="updatePrescriptionStatusToReturned">
+        UPDATE prescription
+        SET status = 'RETURNED'
+        WHERE prescription_id = #{prescriptionId}
+    </update>
+
+    <!-- 查询处方状态 -->
+    <select id="selectPrescriptionStatus" resultType="string">
+        SELECT status FROM prescription WHERE prescription_id = #{prescriptionId}
+    </select>
+
+    <!-- 插入pharmacy_record -->
+    <insert id="insertPharmacyRecord" parameterType="com.ncst.hospitaloutpatient.model.entity.pharmacy.PharmacyRecord">
+        INSERT INTO pharmacy_record (
+            prescription_id, patient_no, patient_name, drug_id, drug_name,
+            quantity, amount, operate_type, operator_id, operate_time
+        ) VALUES (
+                     #{prescriptionId}, #{patientNo}, #{patientName}, #{drugId}, #{drugName},
+                     #{quantity}, #{amount}, #{operateType}, #{operatorId}, #{operateTime}
+                 )
+    </insert>
+
+    <!-- 查询处方详情（PrescriptionInfo为VO/pojo，包含所需字段） -->
+    <select id="selectPrescriptionInfo" resultType="com.ncst.hospitaloutpatient.model.dto.pharmacy.PrescriptionInfo">
+        SELECT
+            p.prescription_id,
+            pat.patient_no,
+            pat.name AS patient_name,
+            p.drug_id,
+            d.drug_name,
+            p.quantity,
+            (p.quantity * d.retail_price) AS amount
+        FROM prescription p
+                 LEFT JOIN registration r ON p.registration_id = r.registration_id
+                 LEFT JOIN patient pat ON r.patient_id = pat.patient_id
+                 LEFT JOIN drug d ON p.drug_id = d.drug_id
+        WHERE p.prescription_id = #{prescriptionId}
+    </select>
+
+    <!-- 减少药品库存 -->
+    <update id="decreaseDrugStock">
+        UPDATE drug
+        SET stock_quantity = stock_quantity - #{quantity}
+        WHERE drug_id = #{drugId}
+          AND stock_quantity >= #{quantity}
+    </update>
+
+    <!-- 回补药品库存 -->
+    <update id="increaseDrugStock">
+        UPDATE drug
+        SET stock_quantity = stock_quantity + #{quantity}
+        WHERE drug_id = #{drugId}
+    </update>
+
+    <!-- 查询药房操作记录 -->
+    <select id="listPharmacyRecords" resultType="com.ncst.hospitaloutpatient.model.dto.pharmacy.PharmacyRecordDTO">
+        SELECT
+        record_id,
+        prescription_id,
+        patient_no,
+        patient_name,
+        drug_id,
+        drug_name,
+        quantity,
+        amount,
+        operate_type,
+        operator_id,
+        operate_time,
+        remark
+        FROM pharmacy_record
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (patient_name LIKE CONCAT('%', #{keyword}, '%')
+                OR drug_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="type != null and type != ''">
+                AND operate_type = #{type}
+            </if>
+        </where>
+        <choose>
+            <when test="sortBy == 'patientName'">
+                ORDER BY CONVERT(patient_name USING gbk)
+            </when>
+            <when test="sortBy == 'amount'">
+                ORDER BY amount
+            </when>
+            <otherwise>
+                ORDER BY operate_time
+            </otherwise>
+        </choose>
+        <if test="order == 'asc'">
+            ASC
+        </if>
+        <if test="order == null or order == '' or order == 'desc'">
+            DESC
+        </if>
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计总数 -->
+    <select id="countPharmacyRecords" resultType="long">
+        SELECT COUNT(1)
+        FROM pharmacy_record
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (patient_name LIKE CONCAT('%', #{keyword}, '%')
+                OR drug_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="type != null and type != ''">
+                AND operate_type = #{type}
+            </if>
+        </where>
+    </select>
+
+</mapper>
