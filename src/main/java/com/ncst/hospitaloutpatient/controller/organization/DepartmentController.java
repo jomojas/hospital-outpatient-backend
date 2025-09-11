@@ -1,9 +1,7 @@
 package com.ncst.hospitaloutpatient.controller.organization;
 
 import com.ncst.hospitaloutpatient.common.response.ApiResponse;
-import com.ncst.hospitaloutpatient.model.dto.organization.DepartmentResponse;
-import com.ncst.hospitaloutpatient.model.dto.organization.DepartmentRoleResponse;
-import com.ncst.hospitaloutpatient.model.dto.organization.DepartmentTypeResponse;
+import com.ncst.hospitaloutpatient.model.dto.organization.*;
 import com.ncst.hospitaloutpatient.service.organization.DepartmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -44,5 +42,24 @@ public class DepartmentController {
     ) {
         List<DepartmentRoleResponse> roles = departmentService.listDepartmentRoles(departmentId);
         return ApiResponse.ok(roles);
+    }
+
+    @Operation(summary = "添加科室")
+    @PostMapping
+    public ApiResponse<?> createDepartment(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "科室信息", required = true)
+            @RequestBody CreateDepartmentRequest request) {
+        departmentService.createDepartment(request);
+        return ApiResponse.ok();
+    }
+
+    @Operation(summary = "编辑科室信息")
+    @PutMapping("/{id}")
+    public ApiResponse<?> updateDepartment(
+            @PathVariable("id") Integer departmentId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "科室信息", required = true)
+            @RequestBody UpdateDepartmentRequest request) {
+        departmentService.updateDepartment(departmentId, request);
+        return ApiResponse.ok();
     }
 }

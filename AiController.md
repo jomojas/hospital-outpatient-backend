@@ -59,6 +59,8 @@
 - GET /api/departments/types -> listDepartmentTypes()
 - GET /api/departments?type=OUTPATIENT|EXAM|LAB|PROCEDURE|PHARMACY|REGISTRATION → listDepartments()
 - GET /api/departments/{departmentId}/roles -> listDepartmentRoles(@PathVariable departmentId)
+- POST /api/departments → createDepartment()
+- PUT /api/departments/{id} → updateDepartment(@PathVariable id)
 
 文件：com/ncst/hospitaloutpatient/controller/organization/DoctorController.java
 

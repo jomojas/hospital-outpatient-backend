@@ -33,4 +33,16 @@
         WHERE dr.department_id = #{departmentId}
     </select>
 
+    <insert id="insertDepartment" parameterType="com.ncst.hospitaloutpatient.model.dto.organization.CreateDepartmentRequest">
+        INSERT INTO department (department_name, type)
+        VALUES (#{departmentName}, #{type})
+    </insert>
+
+    <update id="updateDepartment" parameterType="map">
+        UPDATE department
+        SET department_name = #{req.departmentName},
+            type = #{req.type}
+        WHERE department_id = #{departmentId}
+    </update>
+
 </mapper>

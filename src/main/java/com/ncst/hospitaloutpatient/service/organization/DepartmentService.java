@@ -1,12 +1,12 @@
 package com.ncst.hospitaloutpatient.service.organization;
 
 import com.ncst.hospitaloutpatient.common.enums.DepartmentType;
+import com.ncst.hospitaloutpatient.common.exception.BusinessException;
 import com.ncst.hospitaloutpatient.mapper.organization.DepartmentMapper;
-import com.ncst.hospitaloutpatient.model.dto.organization.DepartmentResponse;
-import com.ncst.hospitaloutpatient.model.dto.organization.DepartmentRoleResponse;
-import com.ncst.hospitaloutpatient.model.dto.organization.DepartmentTypeResponse;
+import com.ncst.hospitaloutpatient.model.dto.organization.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,5 +37,43 @@ public class DepartmentService {
 
     public List<DepartmentRoleResponse> listDepartmentRoles(Integer departmentId) {
         return departmentMapper.selectRolesByDepartmentId(departmentId);
+    }
+
+    @Transactional
+    public void createDepartment(CreateDepartmentRequest request) {
+        // 校验type是否合法
+        boolean validType = false;
+        for (DepartmentType type : DepartmentType.values()) {
+            if (type.name().equalsIgnoreCase(request.getType())) {
+                validType = true;
+                break;
+            }
+        }
+        if (!validType) {
+            throw new BusinessException(400, "科室类型不合法: " + request.getType());
+        }
+        int row = departmentMapper.insertDepartment(request);
+        if (row == 0) {
+            throw new BusinessException(500, "新增科室失败");
+        }
+    }
+
+    @Transactional
+    public void updateDepartment(Integer departmentId, UpdateDepartmentRequest request) {
+        // 校验type是否合法
+        boolean validType = false;
+        for (DepartmentType type : DepartmentType.values()) {
+            if (type.name().equalsIgnoreCase(request.getType())) {
+                validType = true;
+                break;
+            }
+        }
+        if (!validType) {
+            throw new BusinessException(400, "科室类型不合法: " + request.getType());
+        }
+        int row = departmentMapper.updateDepartment(departmentId, request);
+        if (row == 0) {
+            throw new BusinessException(500, "科室信息更新失败");
+        }
     }
 }
