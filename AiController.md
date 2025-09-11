@@ -179,16 +179,16 @@
 
 文件：com/ncst/hospitaloutpatient/controller/analytics/StatsController.java
 
-- GET /api/stats/registrations/trend?startDate=&endDate=&granularity=auto → registrationsTrend()
+- GET /api/stats/registrations/trend?startDate=&endDate=&period=auto → registrationsTrend()
 - GET /api/stats/registrations/type-breakdown?startDate=&endDate= → registrationsTypeBreakdown()
 - GET /api/stats/registrations/by-department?startDate=&endDate=&topN= → registrationsByDepartment()
 - GET /api/stats/registrations/by-doctor?startDate=&endDate=&topN= → registrationsByDoctor()
-- GET /api/stats/revenue/trend?startDate=&endDate=&granularity=auto&metric=net|gross → revenueTrend()
+- GET /api/stats/revenue/trend?startDate=&endDate=&period=auto → revenueTrend()
 - GET /api/stats/revenue/by-type?startDate=&endDate= → revenueByType()
-- GET /api/stats/revenue/by-payment-method?startDate=&endDate= → revenueByPaymentMethod()
+          - GET /api/stats/revenue/by-payment-method?startDate=&endDate= → revenueByPaymentMethod()
 - GET /api/stats/revenue/by-department?startDate=&endDate=&topN= → revenueByDepartment()
-- GET /api/stats/revenue/by-doctor?startDate=&endDate=&topN= → revenueByDoctor()
-- GET /api/stats/refund/trend?startDate=&endDate=&granularity=auto → refundTrend()
+          - GET /api/stats/revenue/by-doctor?startDate=&endDate=&topN= → revenueByDoctor()
+- GET /api/stats/refund/trend?startDate=&endDate=&period=auto → refundTrend()
 
 ---
 

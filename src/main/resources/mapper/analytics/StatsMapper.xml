@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ncst.hospitaloutpatient.mapper.analytics.StatsMapper">
+
+    <select id="selectRegistrationTrend" resultType="map" parameterType="map">
+        SELECT
+        <choose>
+            <when test="granularity == 'DAY'">
+                DATE_FORMAT(visit_date, '%Y-%m-%d') AS time
+            </when>
+            <when test="granularity == 'MONTH'">
+                DATE_FORMAT(visit_date, '%Y-%m') AS time
+            </when>
+            <otherwise>
+                DATE_FORMAT(visit_date, '%Y') AS time
+            </otherwise>
+        </choose>,
+        COUNT(*) AS num
+        FROM registration
+        <where>
+            <if test="startDate != null and startDate != ''">
+                visit_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND visit_date &lt;= #{endDate}
+            </if>
+        </where>
+        GROUP BY time
+        ORDER BY time
+    </select>
+
+    <!-- 查询最早挂号日期 -->
+    <select id="selectEarliestRegistrationDate" resultType="string">
+        SELECT DATE_FORMAT(MIN(visit_date), '%Y-%m-%d') FROM registration
+    </select>
+
+    <select id="selectRegistrationTypeBreakdown" resultType="com.ncst.hospitaloutpatient.model.dto.analytics.RegistrationsTypeBreakdownDTO">
+        SELECT
+        number_type AS name,
+        COUNT(*) AS value
+        FROM registration
+        <where>
+            <if test="startDate != null and startDate != ''">
+                visit_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND visit_date &lt;= #{endDate}
+            </if>
+        </where>
+        GROUP BY number_type
+    </select>
+
+    <select id="selectRegistrationsByDepartment" resultType="com.ncst.hospitaloutpatient.model.dto.analytics.RegistrationsByDepartmentDTO">
+        SELECT
+        d.department_name AS name,
+        COUNT(*) AS value
+        FROM registration r
+        JOIN department d ON r.department_id = d.department_id
+        <where>
+            <if test="startDate != null and startDate != ''">
+                r.visit_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND r.visit_date &lt;= #{endDate}
+            </if>
+        </where>
+        GROUP BY d.department_name
+    </select>
+
+    <select id="selectRegistrationsByDoctor" resultType="com.ncst.hospitaloutpatient.model.dto.analytics.RegistrationsByDoctorDTO">
+        SELECT
+        s.name AS name,
+        COUNT(*) AS value
+        FROM registration r
+        JOIN staff s ON r.doctor_id = s.staff_id
+        <where>
+            <if test="startDate != null and startDate != ''">
+                r.visit_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND r.visit_date &lt;= #{endDate}
+            </if>
+        </where>
+        GROUP BY s.name
+    </select>
+
+    <!-- 收入趋势：只统计交易类型为PAY的记录，按granularity分组 -->
+    <select id="selectRevenueTrend" resultType="map">
+        SELECT
+        <choose>
+            <when test="granularity == 'DAY'">
+                DATE_FORMAT(transaction_time, '%Y-%m-%d') AS time
+            </when>
+            <when test="granularity == 'MONTH'">
+                DATE_FORMAT(transaction_time, '%Y-%m') AS time
+            </when>
+            <when test="granularity == 'YEAR'">
+                DATE_FORMAT(transaction_time, '%Y') AS time
+            </when>
+            <otherwise>
+                DATE_FORMAT(transaction_time, '%Y-%m-%d') AS time
+            </otherwise>
+        </choose>,
+        SUM(CASE WHEN transaction_type='PAY' THEN amount
+        WHEN transaction_type='REFUND' THEN -amount
+        ELSE 0 END) AS num
+        FROM transaction
+        WHERE transaction_time &gt;= #{startDate}
+        AND transaction_time &lt;= #{endDate}
+        AND business_type IN ('REGISTRATION', 'PROJECT', 'DRUG')
+        GROUP BY time
+        ORDER BY time ASC
+    </select>
+
+    <!-- 查询最早收入日期 -->
+    <select id="selectEarliestRevenueDate" resultType="string">
+        SELECT DATE_FORMAT(MIN(transaction_time), '%Y-%m-%d')
+        FROM transaction
+        WHERE transaction_type = 'PAY'
+          AND business_type IN ('REGISTRATION', 'PROJECT', 'DRUG')
+    </select>
+
+    <select id="selectRevenueByType" resultType="map">
+        SELECT
+            business_type AS type,
+            SUM(CASE WHEN transaction_type = 'PAY' THEN amount
+                     WHEN transaction_type = 'REFUND' THEN -amount
+                     ELSE 0 END) AS amount
+        FROM transaction
+        WHERE transaction_time &gt;= #{startDate}
+          AND transaction_time &lt;= #{endDate}
+          AND business_type IN ('REGISTRATION', 'MEDICAL_ITEM', 'DRUG')
+        GROUP BY business_type
+        ORDER BY business_type
+    </select>
+
+    <select id="selectRevenueByDepartment" resultType="map">
+        SELECT
+        d.department_id,
+        d.department_name,
+        COALESCE(SUM(
+        CASE
+        WHEN t.transaction_type = 'PAY' THEN t.amount
+        WHEN t.transaction_type = 'REFUND' THEN -t.amount
+        ELSE 0
+        END
+        ), 0) AS amount
+        FROM transaction t
+        JOIN registration r ON t.registration_id = r.registration_id
+        JOIN department d ON r.department_id = d.department_id
+        WHERE t.transaction_time &gt;= #{startDate}
+        AND t.transaction_time &lt;= #{endDate}
+        GROUP BY d.department_id, d.department_name
+        ORDER BY d.department_id
+    </select>
+
+    <select id="selectRefundTrend" resultType="map">
+        SELECT
+        <choose>
+            <when test="granularity == 'DAY'">
+                DATE_FORMAT(transaction_time, '%Y-%m-%d') AS date
+            </when>
+            <when test="granularity == 'MONTH'">
+                DATE_FORMAT(transaction_time, '%Y-%m') AS date
+            </when>
+            <when test="granularity == 'YEAR'">
+                DATE_FORMAT(transaction_time, '%Y') AS date
+            </when>
+        </choose>,
+        SUM(amount) AS amount
+        FROM transaction
+        WHERE transaction_type = 'REFUND'
+        AND transaction_time &gt;= #{startDate}
+        AND transaction_time &lt; #{endDate}
+        GROUP BY date
+        ORDER BY date
+    </select>
+
+</mapper>
