@@ -168,7 +168,6 @@
 
 文件：com/ncst/hospitaloutpatient/controller/inventory/DrugController.java
 
-- GET /api/drugs?page=&size=&keyword= → listDrugs()
 - POST /api/drugs → createDrug()
 - PUT /api/drugs/{id} → updateDrug(@PathVariable id)
 

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ncst.hospitaloutpatient.mapper.inventory.DrugMapper">
+
+    <!-- 检查药品分类是否存在 -->
+    <select id="existsDrugCategory" resultType="boolean">
+        SELECT COUNT(1) > 0 FROM drug_category WHERE category_id = #{categoryId}
+    </select>
+
+    <insert id="insertDrug" parameterType="com.ncst.hospitaloutpatient.model.dto.inventory.CreateDrugRequest">
+        INSERT INTO drug (
+            drug_code, drug_name, category_id, production_date, shelf_life,
+            stock_quantity, specification, unit, retail_price, description
+        ) VALUES (
+                     #{drugCode}, #{drugName}, #{categoryId}, #{productionDate}, #{shelfLife},
+                     #{stockQuantity}, #{specification}, #{unit}, #{retailPrice}, #{description}
+                 )
+    </insert>
+
+    <update id="updateDrug" parameterType="map">
+        UPDATE drug SET
+                        drug_code = #{req.drugCode},
+                        drug_name = #{req.drugName},
+                        category_id = #{req.categoryId},
+                        production_date = #{req.productionDate},
+                        shelf_life = #{req.shelfLife},
+                        stock_quantity = #{req.stockQuantity},
+                        specification = #{req.specification},
+                        unit = #{req.unit},
+                        retail_price = #{req.retailPrice},
+                        description = #{req.description}
+        WHERE drug_id = #{drugId}
+    </update>
+
+</mapper>
