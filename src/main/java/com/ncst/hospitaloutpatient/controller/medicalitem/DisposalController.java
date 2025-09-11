@@ -1,10 +1,7 @@
 package com.ncst.hospitaloutpatient.controller.medicalitem;
 
 import com.ncst.hospitaloutpatient.common.response.ApiResponse;
-import com.ncst.hospitaloutpatient.model.dto.medicalitem.DepartmentSimpleDTO;
-import com.ncst.hospitaloutpatient.model.dto.medicalitem.ExamApplyDTO;
-import com.ncst.hospitaloutpatient.model.dto.medicalitem.ItemApplyResultDTO;
-import com.ncst.hospitaloutpatient.model.dto.medicalitem.StaffSimpleDTO;
+import com.ncst.hospitaloutpatient.model.dto.medicalitem.*;
 import com.ncst.hospitaloutpatient.service.medicalitem.DisposalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -80,5 +77,20 @@ public class DisposalController {
             @Parameter(description = "科室ID", required = true) @PathVariable Integer departmentId) {
         List<StaffSimpleDTO> list = disposalService.listStaffsByDepartmentId(departmentId);
         return ApiResponse.ok(list);
+    }
+
+    @GetMapping("/records")
+    @Operation(summary = "分页获取当前员工经手的检查/检验/处置项目")
+    public ApiResponse<List<MedicalItemOperateLogDTO>> listDisposalRecords(
+            @Parameter(description = "关键字(患者姓名或项目名称)") @RequestParam(required = false) String keyword,
+            @Parameter(description = "操作类型(EXECUTE/INPUT_RESULT)") @RequestParam(required = false) String operateType,
+            @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") Integer page,
+            @Parameter(description = "每页数量", example = "10") @RequestParam(defaultValue = "10") Integer pageSize,
+            @Parameter(description = "排序字段(patientName, operateTime)", example = "operateTime") @RequestParam(defaultValue = "operateTime") String sortBy,
+            @Parameter(description = "排序顺序(desc/asc)", example = "desc") @RequestParam(defaultValue = "desc") String order
+    ) {
+        List<MedicalItemOperateLogDTO> records = disposalService.listOperateLogs(keyword, operateType, page, pageSize, sortBy, order);
+        long total = disposalService.countOperateLogs(keyword, operateType);
+        return ApiResponse.pageOk(records, page, pageSize, total);
     }
 }

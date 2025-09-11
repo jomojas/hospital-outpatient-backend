@@ -1,9 +1,6 @@
 package com.ncst.hospitaloutpatient.mapper.medicalitem;
 
-import com.ncst.hospitaloutpatient.model.dto.medicalitem.DepartmentSimpleDTO;
-import com.ncst.hospitaloutpatient.model.dto.medicalitem.ExamApplyDTO;
-import com.ncst.hospitaloutpatient.model.dto.medicalitem.ItemApplyInfoForLog;
-import com.ncst.hospitaloutpatient.model.dto.medicalitem.StaffSimpleDTO;
+import com.ncst.hospitaloutpatient.model.dto.medicalitem.*;
 import com.ncst.hospitaloutpatient.model.entity.medicalItem.MedicalItemOperationLog;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -51,4 +48,20 @@ public interface DisposalMapper {
     List<DepartmentSimpleDTO> listDepartmentsByType(@Param("type") String type);
 
     List<StaffSimpleDTO> listStaffsByDepartmentId(Integer departmentId);
+
+    List<MedicalItemOperateLogDTO> listOperateLogs(
+            @Param("keyword") String keyword,
+            @Param("operateType") String operateType,
+            @Param("operatorId") Integer operatorId,
+            @Param("sortBy") String sortBy,
+            @Param("order") String order,
+            @Param("offset") int offset,
+            @Param("pageSize") int pageSize
+    );
+
+    long countOperateLogs(
+            @Param("keyword") String keyword,
+            @Param("operateType") String operateType,
+            @Param("operatorId") Integer operatorId
+    );
 }

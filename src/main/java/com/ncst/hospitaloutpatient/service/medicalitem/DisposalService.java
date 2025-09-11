@@ -161,4 +161,13 @@ public class DisposalService {
     public List<StaffSimpleDTO> listStaffsByDepartmentId(Integer departmentId) {
         return disposalMapper.listStaffsByDepartmentId(departmentId);
     }
+
+    public List<MedicalItemOperateLogDTO> listOperateLogs(String keyword, String operateType, Integer page, Integer pageSize, String sortBy, String order) {
+        int offset = (page - 1) * pageSize;
+        return disposalMapper.listOperateLogs(keyword, operateType, getCurrentStaffId(), sortBy, order, offset, pageSize);
+    }
+
+    public long countOperateLogs(String keyword, String operateType) {
+        return disposalMapper.countOperateLogs(keyword, operateType, getCurrentStaffId());
+    }
 }

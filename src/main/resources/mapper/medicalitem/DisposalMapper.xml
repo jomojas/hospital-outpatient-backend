@@ -158,4 +158,68 @@
         WHERE department_id = #{departmentId}
     </select>
 
+    <select id="listOperateLogs" resultType="com.ncst.hospitaloutpatient.model.dto.medicalitem.MedicalItemOperateLogDTO">
+        SELECT
+        log_id AS logId,
+        apply_id AS applyId,
+        operator_id AS operatorId,
+        operate_time AS operateTime,
+        operate_type AS operateType,
+        item_id AS itemId,
+        item_name AS itemName,
+        item_type AS itemType,
+        patient_no AS patientNo,
+        patient_name AS patientName,
+        remark
+        FROM medical_item_operation_log
+        <where>
+            item_type = 'DISPOSAL'
+            <if test="operatorId != null">
+                AND operator_id = #{operatorId}
+            </if>
+            <if test="operateType != null and operateType != ''">
+                AND operate_type = #{operateType}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (patient_name LIKE CONCAT('%', #{keyword}, '%')
+                OR item_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'patientName'">
+                CONVERT(patient_name USING gbk)
+            </when>
+            <otherwise>
+                operate_time
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="order == 'asc'">
+                ASC
+            </when>
+            <otherwise>
+                DESC
+            </otherwise>
+        </choose>
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countOperateLogs" resultType="long">
+        SELECT COUNT(1) FROM medical_item_operation_log
+        <where>
+            item_type = 'DISPOSAL'
+            <if test="operatorId != null">
+                AND operator_id = #{operatorId}
+            </if>
+            <if test="operateType != null and operateType != ''">
+                AND operate_type = #{operateType}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (patient_name LIKE CONCAT('%', #{keyword}, '%')
+                OR item_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
 </mapper>

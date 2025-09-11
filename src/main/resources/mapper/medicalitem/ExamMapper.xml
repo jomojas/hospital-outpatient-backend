@@ -173,8 +173,9 @@
         remark
         FROM medical_item_operation_log
         <where>
+            item_type = 'EXAM'
             <if test="operatorId != null">
-                operator_id = #{operatorId}
+                AND operator_id = #{operatorId}
             </if>
             <if test="operateType != null and operateType != ''">
                 AND operate_type = #{operateType}
@@ -207,8 +208,9 @@
     <select id="countOperateLogs" resultType="long">
         SELECT COUNT(1) FROM medical_item_operation_log
         <where>
+            item_type = 'EXAM'
             <if test="operatorId != null">
-                operator_id = #{operatorId}
+                AND operator_id = #{operatorId}
             </if>
             <if test="operateType != null and operateType != ''">
                 AND operate_type = #{operateType}

@@ -161,4 +161,13 @@ public class LabService {
     public List<StaffSimpleDTO> listStaffsByDepartmentId(Integer departmentId) {
         return labMapper.listStaffsByDepartmentId(departmentId);
     }
+
+    public List<MedicalItemOperateLogDTO> listOperateLogs(String keyword, String operateType, Integer page, Integer pageSize, String sortBy, String order) {
+        int offset = (page - 1) * pageSize;
+        return labMapper.listOperateLogs(keyword, operateType, getCurrentStaffId(), sortBy, order, offset, pageSize);
+    }
+
+    public long countOperateLogs(String keyword, String operateType) {
+        return labMapper.countOperateLogs(keyword, operateType, getCurrentStaffId());
+    }
 }
