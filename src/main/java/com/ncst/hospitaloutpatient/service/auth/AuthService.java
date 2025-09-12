@@ -42,8 +42,11 @@ public class AuthService {
         }
         String roleName = role.getRoleName();
 
+        // 4. 获取科室类型
+        String departmentType = authMapper.selectTypeByDepartmentId(staff.getDepartmentId());
+
         // 4. 组装UserDto
-        return new UserDto(staffId, userAccount.getAccountName(), roleName);
+        return new UserDto(staffId, userAccount.getAccountName(), roleName, departmentType);
     }
 
     public void changePassword(String staffId, String oldPassword, String newPassword) {

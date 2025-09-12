@@ -39,7 +39,11 @@ public class AuthController {
                 "role", user.getRole()
         );
         String token = jwtUtil.generateToken(claims, String.valueOf(user.getId()));
-        Map<String, String> data = Map.of("token", token);
+        Map<String, String> data = Map.of(
+                "token", token,
+                "role", user.getRole(),
+                "departmentType", user.getDepartmentType()
+        );
         return ApiResponse.ok(data);
     }
 

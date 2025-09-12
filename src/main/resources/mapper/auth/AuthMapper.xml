@@ -66,4 +66,8 @@
         UPDATE staff_account SET password = #{password} WHERE staff_id = #{staffId}
     </update>
 
+    <select id="selectTypeByDepartmentId" resultType="java.lang.String">
+        SELECT type FROM department WHERE department_id = #{departmentId}
+    </select>
+
 </mapper>

@@ -15,4 +15,7 @@ public class UserDto {
 
     @Schema(description = "角色", example = "admin")
     private String role;
+
+    @Schema(description = "科室类型", example = "内科")
+    private String departmentType;
 }
