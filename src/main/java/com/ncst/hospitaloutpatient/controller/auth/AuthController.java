@@ -43,7 +43,7 @@ public class AuthController {
                 "token", token,
                 "role", user.getRole(),
                 "departmentType", user.getDepartmentType(),
-                "patientName", user.getStaffName(),
+                "name", user.getStaffName(),
                 "lastLoginTime", user.getLastLoginTime()
         );
         return ApiResponse.ok(data);
