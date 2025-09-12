@@ -20,7 +20,7 @@ public class UserDto {
     private String departmentType;
 
     @Schema(description = "科室类型", example = "内科")
-    private String patientName;
+    private String staffName;
 
     @Schema(description = "科室类型", example = "内科")
     private String lastLoginTime;
