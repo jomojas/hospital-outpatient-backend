@@ -42,7 +42,9 @@ public class AuthController {
         Map<String, String> data = Map.of(
                 "token", token,
                 "role", user.getRole(),
-                "departmentType", user.getDepartmentType()
+                "departmentType", user.getDepartmentType(),
+                "patientName", user.getPatientName(),
+                "lastLoginTime", user.getLastLoginTime()
         );
         return ApiResponse.ok(data);
     }

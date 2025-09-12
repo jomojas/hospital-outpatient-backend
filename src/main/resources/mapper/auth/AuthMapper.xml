@@ -70,4 +70,11 @@
         SELECT type FROM department WHERE department_id = #{departmentId}
     </select>
 
+    <select id="getLastLoginTime" resultType="java.lang.String" parameterType="java.lang.Long">
+        SELECT last_login
+        FROM staff_account
+        WHERE staff_id = #{staffId}
+        LIMIT 1
+    </select>
+
 </mapper>

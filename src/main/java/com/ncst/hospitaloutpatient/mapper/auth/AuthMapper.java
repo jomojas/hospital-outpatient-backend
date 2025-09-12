@@ -19,4 +19,6 @@ public interface AuthMapper {
     int updatePasswordByStaffId(@Param("staffId") String staffId, @Param("password") String password);
 
     String selectTypeByDepartmentId(@Param("departmentId") Integer departmentId);
+
+    String getLastLoginTime(@Param("staffId") Long staffId);
 }

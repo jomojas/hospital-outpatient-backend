@@ -45,8 +45,11 @@ public class AuthService {
         // 4. 获取科室类型
         String departmentType = authMapper.selectTypeByDepartmentId(staff.getDepartmentId());
 
+        // 5. 获取上次登录时间
+        String lastLoginTime = authMapper.getLastLoginTime(staffId);
+
         // 4. 组装UserDto
-        return new UserDto(staffId, userAccount.getAccountName(), roleName, departmentType);
+        return new UserDto(staffId, userAccount.getAccountName(), roleName, departmentType, staff.getName(), lastLoginTime);
     }
 
     public void changePassword(String staffId, String oldPassword, String newPassword) {

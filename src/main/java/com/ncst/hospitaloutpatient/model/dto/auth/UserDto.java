@@ -18,4 +18,10 @@ public class UserDto {
 
     @Schema(description = "科室类型", example = "内科")
     private String departmentType;
+
+    @Schema(description = "科室类型", example = "内科")
+    private String patientName;
+
+    @Schema(description = "科室类型", example = "内科")
+    private String lastLoginTime;
 }
