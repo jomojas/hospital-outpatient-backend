@@ -175,4 +175,8 @@
         WHERE registration_id = #{registrationId} AND current_status != 'FINISHED'
     </update>
 
+    <select id="selectMaxPatientNo" resultType="java.lang.String">
+        SELECT MAX(patient_no) FROM patient
+    </select>
+
 </mapper>

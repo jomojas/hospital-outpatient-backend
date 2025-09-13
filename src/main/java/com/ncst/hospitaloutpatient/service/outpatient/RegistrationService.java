@@ -177,4 +177,15 @@ public class RegistrationService {
         }
     }
 
+    public String generatePatientNo() {
+        String maxPatientNo = registrationMapper.selectMaxPatientNo();
+        if (maxPatientNo == null) {
+            return "PNO001";
+        }
+        // 提取数字部分
+        String numStr = maxPatientNo.replaceAll("[^0-9]", "");
+        int num = Integer.parseInt(numStr) + 1;
+        return String.format("PNO%03d", num);
+    }
+
 }

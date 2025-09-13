@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("api/registrations")
@@ -26,8 +27,15 @@ public class RegistrationController {
         return ApiResponse.ok(response);
     }
 
+    @Operation(
+        summary = "获取挂号详情",
+        description = "根据挂号ID获取挂号的详细信息"
+    )
     @GetMapping("/{id}")
-    public ApiResponse<RegistrationDetailResponse> getRegistration(@PathVariable Integer id) {
+    public ApiResponse<RegistrationDetailResponse> getRegistration(
+        @Parameter(description = "挂号ID", required = true, example = "1")
+        @PathVariable Integer id
+    ) {
         RegistrationDetailResponse response = registrationService.getRegistration(id);
         return ApiResponse.ok(response);
     }
@@ -72,5 +80,13 @@ public class RegistrationController {
     ) {
         registrationService.cancelRegistration(id);
         return ApiResponse.ok();
+    }
+
+    @Operation(summary = "生成新的病历号", description = "根据现有最大病历号生成新的病历号")
+    @GetMapping("/generate-patient-no")
+    public ApiResponse<Map<String, String>> generatePatientNo() {
+        String newPatientNo = registrationService.generatePatientNo();
+        Map<String, String> data = Map.of("patientNo", newPatientNo);
+        return ApiResponse.ok(data);
     }
 }

@@ -1,17 +1,17 @@
 package com.ncst.hospitaloutpatient.controller.patient;
 
 import com.ncst.hospitaloutpatient.common.response.ApiResponse;
+import com.ncst.hospitaloutpatient.model.dto.patient.PatientRequest;
 import com.ncst.hospitaloutpatient.model.dto.patient.PatientResponse;
 import com.ncst.hospitaloutpatient.service.patient.PatientService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("api/patients")
@@ -27,5 +27,14 @@ public class PatientController {
     ) {
         List<PatientResponse> patients = patientService.searchPatient(name, idCard);
         return ApiResponse.ok(patients);
+    }
+
+    @Operation(summary = "添加患者", description = "创建新的患者信息")
+    @PostMapping
+    public ApiResponse<Map<String, Long>> createPatient(@RequestBody PatientRequest request) {
+        long patientdId = patientService.createPatient(request);
+        Map<String, Long> response = new HashMap<>();
+        response.put("patientId", patientdId);
+        return ApiResponse.ok(response);
     }
 }

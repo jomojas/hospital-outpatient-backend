@@ -78,6 +78,7 @@
 文件：com/ncst/hospitaloutpatient/controller/patient/PatientController.java
 
 - GET /api/patients/search?name=&idCard= → searchPatient()
+- POST /api/patients → createPatient(@RequestBody PatientRequest request)
 
 ---
 
@@ -87,6 +88,7 @@
 
 - POST /api/registrations → createRegistration()
 - GET /api/registrations/{id} → getRegistration(@PathVariable id)
+- GET /api/registrations/generate-patient-no → generatePatientNo()
 - GET /api/registrations?page=&pageSize=&date=&deptId=&doctorId=&status=&keyword= → listRegistrations()
 - POST /api/registrations/{id}/cancel → cancelRegistration(@PathVariable id)
 

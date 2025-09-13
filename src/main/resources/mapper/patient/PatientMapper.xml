@@ -20,4 +20,9 @@
           AND (#{idCard} IS NULL OR id_card LIKE CONCAT('%', #{idCard}, '%'))
     </select>
 
+    <insert id="insertPatient" parameterType="com.ncst.hospitaloutpatient.model.dto.patient.PatientRequest" useGeneratedKeys="true" keyProperty="patientId">
+        INSERT INTO patient (patient_no, name, gender, birthday, id_card, address)
+        VALUES (#{patientNo}, #{name}, #{gender}, #{birthday}, #{idCard}, #{address})
+    </insert>
+
 </mapper>
