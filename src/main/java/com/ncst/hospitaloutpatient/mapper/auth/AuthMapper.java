@@ -21,4 +21,6 @@ public interface AuthMapper {
     String selectTypeByDepartmentId(@Param("departmentId") Integer departmentId);
 
     String getLastLoginTime(@Param("staffId") Long staffId);
+
+    String getDepartmentNameByDepartmentId(@Param("departmentId") Integer departmentId);
 }

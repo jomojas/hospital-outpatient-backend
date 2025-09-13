@@ -44,7 +44,8 @@ public class AuthController {
                 "role", user.getRole(),
                 "departmentType", user.getDepartmentType(),
                 "name", user.getStaffName(),
-                "lastLoginTime", user.getLastLoginTime()
+                "lastLoginTime", user.getLastLoginTime(),
+                "departmentName", user.getDepartmentName()
         );
         return ApiResponse.ok(data);
     }

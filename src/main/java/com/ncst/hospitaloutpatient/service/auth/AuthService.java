@@ -48,8 +48,11 @@ public class AuthService {
         // 5. 获取上次登录时间
         String lastLoginTime = authMapper.getLastLoginTime(staffId);
 
+        // 6. 获取科室名称
+        String departmentName = authMapper.getDepartmentNameByDepartmentId(staff.getDepartmentId());
+
         // 4. 组装UserDto
-        return new UserDto(staffId, userAccount.getAccountName(), roleName, departmentType, staff.getName(), lastLoginTime);
+        return new UserDto(staffId, userAccount.getAccountName(), roleName, departmentType, staff.getName(), lastLoginTime, departmentName);
     }
 
     public void changePassword(String staffId, String oldPassword, String newPassword) {

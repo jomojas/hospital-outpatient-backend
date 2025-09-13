@@ -77,4 +77,11 @@
         LIMIT 1
     </select>
 
+    <select id="getDepartmentNameByDepartmentId" resultType="java.lang.String" parameterType="java.lang.Integer">
+        SELECT department_name
+        FROM department
+        WHERE department_id = #{departmentId}
+        LIMIT 1
+    </select>
+
 </mapper>
