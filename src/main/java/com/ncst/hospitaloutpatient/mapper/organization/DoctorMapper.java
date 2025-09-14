@@ -9,5 +9,5 @@ import java.util.List;
 @Mapper
 public interface DoctorMapper {
 
-    List<DoctorResponse> selectDoctorsByDepartmentId(@Param("departmentId") Integer departmentId);
+    List<DoctorResponse> selectDoctorsByDepartmentId(@Param("departmentId") Integer departmentId, @Param("visitDate") String visitDate);
 }

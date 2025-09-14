@@ -39,7 +39,7 @@
 
 - GET /api/dictionaries/settlement-categories → listSettlementCategories()
 - GET /api/dictionaries/noon-sessions → listNoonSessions()
-  GET /api/dictionaries/number-types → listNumberTypes()
+- GET /api/dictionaries/number-types → listNumberTypes()
 - GET /api/dictionaries/payment-methods → listPaymentMethods()
 - GET /api/dictionaries/drug-categories → listDrugCategories()
 
