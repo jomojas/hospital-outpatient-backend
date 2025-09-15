@@ -1,6 +1,7 @@
 package com.ncst.hospitaloutpatient.service.reference;
 
 import com.ncst.hospitaloutpatient.common.enums.Period;
+import com.ncst.hospitaloutpatient.common.enums.MedicalItemType;
 import com.ncst.hospitaloutpatient.mapper.reference.DictionaryMapper;
 import com.ncst.hospitaloutpatient.model.dto.reference.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,5 +37,11 @@ public class DictionaryService {
 
     public List<DrugCategoryResponse> listDrugCategories() {
         return dictionaryMapper.selectAllDrugCategories();
+    }
+
+    public List<ProjectTypeResponse> listItemTypes() {
+        return Arrays.stream(MedicalItemType.values())
+                .map(type -> new ProjectTypeResponse(type.name(), type.getLabel()))
+                .collect(Collectors.toList());
     }
 }

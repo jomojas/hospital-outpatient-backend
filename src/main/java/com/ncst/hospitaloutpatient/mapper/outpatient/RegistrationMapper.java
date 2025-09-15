@@ -48,4 +48,9 @@ public interface RegistrationMapper {
     int updatePatientVisitStatusToFinished(@Param("registrationId") Integer registrationId);
 
     String selectMaxPatientNo();
+
+    String getDepartmentNameById(Integer departmentId);
+    String getDoctorNameById(Integer doctorId);
+    String getSettlementTypeNameById(Integer settlementTypeId);
+    String getPaymentMethodNameById(Integer paymentMethodId);
 }

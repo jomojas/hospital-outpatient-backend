@@ -97,10 +97,23 @@ public class RegistrationService {
         }
 
         // 4. 返回响应
+        String departmentName = registrationMapper.getDepartmentNameById(request.getDepartmentId());
+        String doctorName = registrationMapper.getDoctorNameById(request.getDoctorId());
+
         CreateRegistrationResponse response = new CreateRegistrationResponse();
         response.setRegistrationId(registrationId);
         response.setVisitId(visitId);
         response.setTransactionId(transactionId);
+
+        response.setDepartmentName(departmentName);
+        response.setDoctorName(doctorName);
+        response.setVisitDate(request.getVisitDate().toString());
+        response.setPeriod(request.getPeriod());
+        response.setNumberType(request.getNumberType());
+        response.setSettlementTypeName(registrationMapper.getSettlementTypeNameById(request.getSettlementTypeId()));
+        response.setPaymentMethodName(registrationMapper.getPaymentMethodNameById(request.getPaymentMethodId()));
+        response.setPayableAmount(request.getPayableAmount());
+        response.setMedicalRecordBook(request.getMedicalRecordBook());
         return response;
     }
 

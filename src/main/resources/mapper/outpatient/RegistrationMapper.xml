@@ -179,4 +179,20 @@
         SELECT MAX(patient_no) FROM patient
     </select>
 
+    <select id="getDepartmentNameById" resultType="string">
+        SELECT department_name FROM department WHERE department_id = #{departmentId}
+    </select>
+
+    <select id="getDoctorNameById" resultType="string">
+        SELECT name FROM staff WHERE staff_id = #{doctorId}
+    </select>
+
+    <select id="getSettlementTypeNameById" resultType="string">
+        SELECT name FROM settlement_type WHERE settlement_type_id = #{settlementTypeId}
+    </select>
+
+    <select id="getPaymentMethodNameById" resultType="string">
+        SELECT name FROM payment_method WHERE payment_method_id = #{paymentMethodId}
+    </select>
+
 </mapper>

@@ -32,4 +32,10 @@ public class DoctorResponse {
 
     @Schema(description = "是否为专家", example = "true")
     private Boolean isExpert;
+
+    @Schema(description = "Quota Number That Day", example = "true")
+    private Integer initQuota;
+
+    @Schema(description = "Being Used Quota Number", example = "true")
+    private Integer usedQuota;
 }
