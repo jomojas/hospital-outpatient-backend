@@ -1,0 +1,45 @@
+@startuml
+title Exam Management - Complete Workflow
+actor User
+participant ExamController
+participant ExamService
+participant ExamMapper
+
+== 1. Execute Exam ==
+User -> ExamController : executeExam(applyId)
+ExamController -> ExamService : executeExam(applyId)
+ExamService -> ExamMapper : getApplyStatusById(applyId)
+ExamMapper --> ExamService : applyStatus
+ExamService -> ExamMapper : getRegistrationIdByApplyId(applyId)
+ExamMapper --> ExamService : registrationId
+ExamService -> ExamMapper : getCurrentStatus(registrationId)
+ExamMapper --> ExamService : currentStatus
+ExamService -> ExamMapper : updateCurrentStatus(registrationId, "CHECKING")
+ExamMapper --> ExamService : updateResult
+ExamService -> ExamMapper : getApplyInfoForLog(applyId)
+ExamMapper --> ExamService : applyInfo
+ExamService -> ExamMapper : insert(log)
+ExamMapper --> ExamService : logInserted
+ExamService --> ExamController : success
+ExamController --> User : ApiResponse<?>
+
+== 2. Submit Exam Result ==
+User -> ExamController : submitExamResult(applyId, resultDTO)
+ExamController -> ExamService : submitExamResult(applyId, resultDTO)
+ExamService -> ExamMapper : getApplyStatusById(applyId)
+ExamMapper --> ExamService : applyStatus
+ExamService -> ExamMapper : updateResultAndStatus(applyId, result)
+ExamMapper --> ExamService : updateResult
+ExamService -> ExamMapper : getApplyInfoForLog(applyId)
+ExamMapper --> ExamService : applyInfo
+ExamService -> ExamMapper : insertOperationLog(log)
+ExamMapper --> ExamService : logInserted
+ExamService -> ExamMapper : getRegistrationIdByApplyId(applyId)
+ExamMapper --> ExamService : registrationId
+ExamService -> ExamMapper : countUnfinishedApplies(registrationId)
+ExamMapper --> ExamService : unfinishedCount
+ExamService -> ExamMapper : updatePatientVisitStatus(registrationId, "WAITING_FOR_REVISIT")
+ExamMapper --> ExamService : statusUpdated
+ExamService --> ExamController : success
+ExamController --> User : ApiResponse<?>
+@enduml
