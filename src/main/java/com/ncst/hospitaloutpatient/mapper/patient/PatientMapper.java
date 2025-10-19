@@ -12,5 +12,7 @@ public interface PatientMapper {
 
     List<PatientResponse> searchPatient(@Param("name") String name, @Param("idCard") String idCard);
 
+    int existsByIdCard(String idCard);
+
     int insertPatient(PatientRequest request);
 }

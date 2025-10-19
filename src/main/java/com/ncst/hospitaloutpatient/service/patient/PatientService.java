@@ -19,6 +19,10 @@ public class PatientService {
     }
 
     public long createPatient(PatientRequest request) {
+        int exists = patientMapper.existsByIdCard(request.getIdCard());
+        if (exists > 0) {
+            throw new BusinessException(400, "身份证号码已存在");
+        }
         int rows = patientMapper.insertPatient(request);
         if (rows <= 0) {
             throw new BusinessException(500, "创建患者失败");

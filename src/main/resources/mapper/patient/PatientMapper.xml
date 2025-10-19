@@ -20,6 +20,10 @@
           AND (#{idCard} IS NULL OR id_card LIKE CONCAT('%', #{idCard}, '%'))
     </select>
 
+    <select id="existsByIdCard" resultType="int" parameterType="string">
+        SELECT COUNT(*) FROM patient WHERE id_card = #{idCard}
+    </select>
+
     <insert id="insertPatient" parameterType="com.ncst.hospitaloutpatient.model.dto.patient.PatientRequest" useGeneratedKeys="true" keyProperty="patientId">
         INSERT INTO patient (patient_no, name, gender, birthday, id_card, address)
         VALUES (#{patientNo}, #{name}, #{gender}, #{birthday}, #{idCard}, #{address})
