@@ -119,10 +119,10 @@
                 ORDER BY r.visit_date
             </when>
             <when test="sortBy == 'patientName'">
-                ORDER BY p.name
+                ORDER BY CONVERT(p.name USING gbk)
             </when>
             <when test="sortBy == 'doctorName'">
-                ORDER BY d.name
+                ORDER BY CONVERT(d.name USING gbk)
             </when>
             <otherwise>
                 ORDER BY r.visit_date
