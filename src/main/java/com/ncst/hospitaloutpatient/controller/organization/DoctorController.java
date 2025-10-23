@@ -28,4 +28,11 @@ public class DoctorController {
         List<DoctorResponse> doctors = doctorService.listDoctorsByDepartment(departmentId);
         return ApiResponse.ok(doctors);
     }
+
+    @Operation(summary = "获取医生列表", description = "获取所有医生信息")
+    @GetMapping("/all")
+    public ApiResponse<List<DoctorResponse>> listDoctors() {
+        List<DoctorResponse> doctors = doctorService.listDoctors();
+        return ApiResponse.ok(doctors);
+    }
 }

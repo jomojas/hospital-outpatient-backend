@@ -18,4 +18,9 @@ public class DoctorService {
         LocalDate today = LocalDate.now();
         return doctorMapper.selectDoctorsByDepartmentId(departmentId, today.toString());
     }
+
+    public List<DoctorResponse> listDoctors() {
+        LocalDate today = LocalDate.now();
+        return doctorMapper.selectAllDoctors();
+    }
 }

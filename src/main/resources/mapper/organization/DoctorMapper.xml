@@ -29,4 +29,21 @@
         </if>
     </select>
 
+<select id="selectAllDoctors" resultType="com.ncst.hospitaloutpatient.model.dto.organization.DoctorResponse">
+    SELECT
+        s.staff_id AS staffId,
+        s.name,
+        s.phone,
+        s.id_card AS idCard,
+        s.department_id AS departmentId,
+        s.description,
+        s.role_id AS roleId,
+        s.create_time AS createTime,
+        IFNULL(ext.is_expert, 0) AS isExpert
+    FROM staff s
+    INNER JOIN staff_role r ON s.role_id = r.role_id
+    LEFT JOIN staff_doctor_ext ext ON s.staff_id = ext.staff_id
+    WHERE r.role_name = 'doctor'
+</select>
+
 </mapper>
