@@ -42,7 +42,7 @@
         </where>
         ORDER BY
         <choose>
-            <when test="sortBy == 'name'">p.name</when>
+            <when test="sortBy == 'name'">CONVERT(p.name USING gbk)</when>
             <otherwise>t.transaction_time</otherwise>
         </choose>
         <choose>

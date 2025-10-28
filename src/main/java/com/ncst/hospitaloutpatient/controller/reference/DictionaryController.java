@@ -66,7 +66,7 @@ public class DictionaryController {
         return ApiResponse.ok(categories);
     }
 
-    @Operation(summary = "获取所有项目类别", description = "返回所有药品类别")
+    @Operation(summary = "获取所有项目类别", description = "返回所有项目类别")
     @GetMapping("/item-types")
     public ApiResponse<List<ProjectTypeResponse>> listItemTypes() {
         List<ProjectTypeResponse> categories = dictionaryService.listItemTypes();

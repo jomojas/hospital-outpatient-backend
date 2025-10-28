@@ -23,7 +23,7 @@ public class FeeController {
     @Operation(summary = "分页查询费用交易记录", description = "按患者姓名、交易状态、时间区间等条件分页查询费用支付/退费记录")
     public ApiResponse<List<FeeTransactionDTO>> queryFees(
             @Parameter(description = "患者姓名，模糊查询", example = "张三") @RequestParam(required = false) String name,
-            @Parameter(description = "交易状态，PAID=已支付，REFUND=已退费", example = "PAID") @RequestParam String status,
+            @Parameter(description = "交易状态，PAID=已支付，REFUND=已退费", example = "PAID") @RequestParam(required = false) String status,
             @Parameter(description = "起始时间", example = "2025-09-01 00:00:00") @RequestParam(required = false) String startTime,
             @Parameter(description = "结束时间", example = "2025-09-10 23:59:59") @RequestParam(required = false) String endTime,
             @Parameter(description = "页码，从1开始", example = "1") @RequestParam(defaultValue = "1") Integer page,

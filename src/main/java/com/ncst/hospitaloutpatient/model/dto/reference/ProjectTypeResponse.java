@@ -12,5 +12,4 @@ public class ProjectTypeResponse {
 
     @Schema(description = "项目类型名称", example = "检查")
     private String name;
-    // getters and setters
 }
