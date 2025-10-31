@@ -11,6 +11,22 @@
             (#{patientNo}, #{registrationId}, #{chiefComplaint}, #{presentHistory}, #{physicalExam}, #{diagnosis}, #{treatmentPlan}, #{doctorId}, #{recordTime})
     </insert>
 
+    <update id="updateCase">
+        UPDATE medical_record
+        SET
+            patient_no = #{dto.patientNo},
+            registration_id = #{dto.registrationId},
+            chief_complaint = #{dto.chiefComplaint},
+            present_history = #{dto.presentHistory},
+            physical_exam = #{dto.physicalExam},
+            diagnosis = #{dto.diagnosis},
+            treatment_plan = #{dto.treatmentPlan},
+            doctor_id = #{dto.doctorId},
+            record_time = #{dto.recordTime}
+        WHERE
+            record_id = #{caseId}
+    </update>
+
     <insert id="insertMedicalItemApply" parameterType="com.ncst.hospitaloutpatient.model.entity.casefile.MedicalItemApply" useGeneratedKeys="true" keyProperty="applyId">
         INSERT INTO medical_item_apply
         (record_id, registration_id, item_id, apply_type, apply_purpose, apply_site, apply_time, status, unit, remark)

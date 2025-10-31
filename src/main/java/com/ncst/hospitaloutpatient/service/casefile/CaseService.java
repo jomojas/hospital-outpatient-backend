@@ -63,6 +63,10 @@ public class CaseService {
         }
     }
 
+    public void updateCase(Long caseId, CaseRequestDTO request) {
+        caseMapper.updateCase(caseId, request);
+    }
+
     @Transactional
     public void submitApplies(Integer recordId, MedicalItemApplyRequest request) {
         for (MedicalItemApplyRequest.ApplyItem item : request.getItems()) {

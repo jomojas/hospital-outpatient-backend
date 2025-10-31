@@ -15,6 +15,8 @@ public interface CaseMapper {
 
     int insertMedicalRecord(MedicalRecord medicalRecord);
 
+    void updateCase(@Param("caseId") Long caseId, @Param("dto") CaseRequestDTO dto);
+
     int insertMedicalItemApply(MedicalItemApply apply);
 
     List<CaseApplyResultDTO> selectCaseApplyResults(@Param("recordId") Integer recordId);

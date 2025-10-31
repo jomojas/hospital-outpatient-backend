@@ -123,7 +123,7 @@
 - POST /api/cases/{caseId}/prescriptions → createPrescriptions(@PathVariable caseId)
 - GET /api/cases/{caseId}/fees → listCaseFees(@PathVariable caseId)
 - GET /api/cases/registrations/patients → listDoctorRegisteredPatients()
-
+- PUT /api/cases/{caseId} → updateCase(@PathVariable caseId, @RequestBody CaseRequestDTO request)
 ---
 
 ## 9) medicalitem 模块

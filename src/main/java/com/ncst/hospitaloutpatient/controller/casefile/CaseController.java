@@ -24,6 +24,12 @@ public class CaseController {
         return ApiResponse.ok();
     }
 
+    @PutMapping("/{caseId}")
+    @Operation(summary = "更新病案", description = "根据caseId更新病案信息")
+    public ApiResponse<?> updateCase(@PathVariable Long caseId, @RequestBody CaseRequestDTO request) {
+        caseService.updateCase(caseId, request);
+        return ApiResponse.ok();
+    }
 
     @PostMapping("/{caseId}/applies")
     @Operation(summary = "为指定病案申请医疗项目", description = "提交一组医疗项目申请")
