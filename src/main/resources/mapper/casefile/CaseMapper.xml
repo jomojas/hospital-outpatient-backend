@@ -105,4 +105,45 @@
         WHERE registration_id = #{registrationId}
     </update>
 
+    <!-- 查询挂号患者列表 -->
+    <select id="selectRegisteredPatientsByDoctor" resultType="com.ncst.hospitaloutpatient.model.dto.casefile.DoctorPatientDTO">
+        SELECT
+            p.name,
+            p.patient_no AS medicalNo,
+            pv.current_status AS status,
+            pv.visit_date AS registrationDate,
+            mr.chief_complaint AS complaint
+        FROM
+            patient_visit pv
+            JOIN patient p ON pv.patient_id = p.patient_id
+            LEFT JOIN medical_record mr ON pv.registration_id = mr.registration_id
+        WHERE
+            pv.doctor_id = #{doctorId}
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    p.name LIKE CONCAT('%', #{keyword}, '%')
+                    OR p.patient_no LIKE CONCAT('%', #{keyword}, '%')
+                )
+            </if>
+        ORDER BY pv.visit_date DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 统计挂号患者总数 -->
+    <select id="countRegisteredPatientsByDoctor" resultType="long">
+        SELECT
+            COUNT(*)
+        FROM
+            patient_visit pv
+            JOIN patient p ON pv.patient_id = p.patient_id
+        WHERE
+            pv.doctor_id = #{doctorId}
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    p.name LIKE CONCAT('%', #{keyword}, '%')
+                    OR p.patient_no LIKE CONCAT('%', #{keyword}, '%')
+                )
+            </if>
+    </select>
+
 </mapper>

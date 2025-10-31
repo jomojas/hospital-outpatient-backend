@@ -1,9 +1,6 @@
 package com.ncst.hospitaloutpatient.mapper.casefile;
 
-import com.ncst.hospitaloutpatient.model.dto.casefile.CaseApplyResultDTO;
-import com.ncst.hospitaloutpatient.model.dto.casefile.CaseFeeDTO;
-import com.ncst.hospitaloutpatient.model.dto.casefile.DrugFeeDTO;
-import com.ncst.hospitaloutpatient.model.dto.casefile.ItemFeeDTO;
+import com.ncst.hospitaloutpatient.model.dto.casefile.*;
 import com.ncst.hospitaloutpatient.model.entity.casefile.MedicalItemApply;
 import com.ncst.hospitaloutpatient.model.entity.casefile.MedicalRecord;
 import com.ncst.hospitaloutpatient.model.entity.casefile.Prescription;
@@ -46,4 +43,16 @@ public interface CaseMapper {
     // 新增：根据 registration_id 更新 patient_visit 状态
     int updatePatientVisitStatusByRegistrationId(@Param("registrationId") Integer registrationId,
                                                  @Param("status") String status);
+
+    List<DoctorPatientDTO> selectRegisteredPatientsByDoctor(
+            @Param("doctorId") Integer doctorId,
+            @Param("keyword") String keyword,
+            @Param("offset") int offset,
+            @Param("limit") int limit
+    );
+
+    long countRegisteredPatientsByDoctor(
+            @Param("doctorId") Integer doctorId,
+            @Param("keyword") String keyword
+    );
 }

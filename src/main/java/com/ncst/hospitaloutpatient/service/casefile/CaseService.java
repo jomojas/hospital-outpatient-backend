@@ -1,5 +1,6 @@
 package com.ncst.hospitaloutpatient.service.casefile;
 
+import ch.qos.logback.core.model.INamedModel;
 import com.ncst.hospitaloutpatient.model.dto.casefile.*;
 import com.ncst.hospitaloutpatient.model.dto.casefile.MedicalItemApplyRequest.ApplyItem;
 import com.ncst.hospitaloutpatient.common.exception.BusinessException;
@@ -8,6 +9,8 @@ import com.ncst.hospitaloutpatient.model.entity.casefile.MedicalItemApply;
 import com.ncst.hospitaloutpatient.model.entity.casefile.MedicalRecord;
 import com.ncst.hospitaloutpatient.model.entity.casefile.Prescription;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +23,21 @@ import java.util.List;
 public class CaseService {
     @Autowired
     private CaseMapper caseMapper;
+
+    public Integer getCurrentStaffId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() != null) {
+            // 你在 filter 里 set 的是字符串 staffId
+            String staffIdStr = authentication.getPrincipal().toString();
+            try {
+                return Integer.parseInt(staffIdStr);
+            } catch (NumberFormatException e) {
+                // 可以做异常处理
+            }
+        }
+        return null;
+    }
+
 
     @Transactional
     public void createMedicalRecord(MedicalRecordCreateRequest request) {
@@ -134,5 +152,16 @@ public class CaseService {
         dto.setTotal(total);
 
         return dto;
+    }
+
+    public List<DoctorPatientDTO> getRegisteredPatientsByDoctor(int page, int pageSize, String keyword) {
+        Integer doctorId = getCurrentStaffId();
+        int offset = (page - 1) * pageSize;
+        return caseMapper.selectRegisteredPatientsByDoctor(doctorId, keyword, offset, pageSize);
+    }
+
+    public long countRegisteredPatientsByDoctor(String keyword) {
+        Integer doctorId = getCurrentStaffId();
+        return caseMapper.countRegisteredPatientsByDoctor(doctorId, keyword);
     }
 }

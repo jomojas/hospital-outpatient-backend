@@ -60,4 +60,16 @@ public class CaseController {
         CaseFeeDTO dto = caseService.listCaseFees(caseId);
         return ApiResponse.ok(dto);
     }
+
+    @GetMapping("/registrations/patients")
+    @Operation(summary = "获取当前登录医生的挂号患者列表", description = "分页、模糊查询患者姓名或病历号")
+    public ApiResponse<?> listDoctorRegisteredPatients(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String keyword
+    ) {
+        List<DoctorPatientDTO> data = caseService.getRegisteredPatientsByDoctor(page, pageSize, keyword);
+        long total = caseService.countRegisteredPatientsByDoctor(keyword);
+        return ApiResponse.pageOk(data, page, pageSize, total);
+    }
 }

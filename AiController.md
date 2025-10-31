@@ -122,6 +122,7 @@
 - GET /api/cases/{caseId}/results → listCaseResults(@PathVariable caseId)
 - POST /api/cases/{caseId}/prescriptions → createPrescriptions(@PathVariable caseId)
 - GET /api/cases/{caseId}/fees → listCaseFees(@PathVariable caseId)
+- GET /api/cases/registrations/patients → listDoctorRegisteredPatients()
 
 ---
 
