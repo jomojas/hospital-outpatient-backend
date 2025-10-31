@@ -9,7 +9,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("api/cases")
@@ -20,8 +22,10 @@ public class CaseController {
     @PostMapping
     @Operation(summary = "创建病案", description = "新增一条病案记录")
     public ApiResponse<?> createCase(@RequestBody MedicalRecordCreateRequest request) {
-        caseService.createMedicalRecord(request);
-        return ApiResponse.ok();
+        Integer recordId = caseService.createMedicalRecord(request);
+        Map<String, Object> result = new HashMap<>();
+        result.put("recordId", recordId);
+        return ApiResponse.ok(result);
     }
 
     @PutMapping("/{caseId}")

@@ -40,7 +40,7 @@ public class CaseService {
 
 
     @Transactional
-    public void createMedicalRecord(MedicalRecordCreateRequest request) {
+    public Integer createMedicalRecord(MedicalRecordCreateRequest request) {
         MedicalRecord record = new MedicalRecord();
         record.setPatientNo(request.getPatientNo());
         record.setRegistrationId(request.getRegistrationId());
@@ -56,11 +56,15 @@ public class CaseService {
             throw new BusinessException(500, "创建病案失败");
         }
 
+        Integer recordId = record.getRecordId();
+
         // 更新patient_visit的status为“已初诊”
         int updateResult = caseMapper.updateStatusToInitialConsultationDone(request.getRegistrationId());
         if (updateResult != 1) {
             throw new BusinessException(500, "更新初诊状态失败");
         }
+
+        return recordId;
     }
 
     public void updateCase(Long caseId, CaseRequestDTO request) {
