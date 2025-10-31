@@ -76,10 +76,11 @@ public class CaseController {
     public ApiResponse<?> listDoctorRegisteredPatients(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize,
-            @RequestParam(required = false) String keyword
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status
     ) {
-        List<DoctorPatientDTO> data = caseService.getRegisteredPatientsByDoctor(page, pageSize, keyword);
-        long total = caseService.countRegisteredPatientsByDoctor(keyword);
+        List<DoctorPatientDTO> data = caseService.getRegisteredPatientsByDoctor(page, pageSize, keyword, status);
+        long total = caseService.countRegisteredPatientsByDoctor(keyword, status);
         return ApiResponse.pageOk(data, page, pageSize, total);
     }
 }

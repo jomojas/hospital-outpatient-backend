@@ -141,6 +141,12 @@
                     OR p.patient_no LIKE CONCAT('%', #{keyword}, '%')
                 )
             </if>
+            <if test="statusList != null and statusList.size() > 0">
+                AND pv.current_status IN
+                <foreach collection="statusList" item="status" open="(" separator="," close=")">
+                    #{status}
+                </foreach>
+            </if>
         ORDER BY pv.visit_date DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
@@ -159,6 +165,12 @@
                     p.name LIKE CONCAT('%', #{keyword}, '%')
                     OR p.patient_no LIKE CONCAT('%', #{keyword}, '%')
                 )
+            </if>
+            <if test="statusList != null and statusList.size() > 0">
+                AND pv.current_status IN
+                <foreach collection="statusList" item="status" open="(" separator="," close=")">
+                    #{status}
+                </foreach>
             </if>
     </select>
 

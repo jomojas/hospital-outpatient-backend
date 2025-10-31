@@ -15,7 +15,7 @@ public class DoctorPatientDTO {
     @Schema(description = "病历号", example = "100200300")
     private String medicalNo;
 
-    @Schema(description = "挂号状态", example = "待初诊")
+    @Schema(description = "挂号状态", example = "WAITING_FOR_CONSULTATION")
     private String status;
 
     @Schema(description = "挂号日期", example = "2024-06-20")

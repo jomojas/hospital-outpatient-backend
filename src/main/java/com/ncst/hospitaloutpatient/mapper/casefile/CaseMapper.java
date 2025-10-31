@@ -47,14 +47,16 @@ public interface CaseMapper {
                                                  @Param("status") String status);
 
     List<DoctorPatientDTO> selectRegisteredPatientsByDoctor(
-            @Param("doctorId") Integer doctorId,
-            @Param("keyword") String keyword,
-            @Param("offset") int offset,
-            @Param("limit") int limit
+        @Param("doctorId") Integer doctorId,
+        @Param("keyword") String keyword,
+        @Param("offset") int offset,
+        @Param("limit") int limit,
+        @Param("statusList") List<String> statusList
     );
 
     long countRegisteredPatientsByDoctor(
             @Param("doctorId") Integer doctorId,
-            @Param("keyword") String keyword
+            @Param("keyword") String keyword,
+            @Param("statusList") List<String> statusList
     );
 }

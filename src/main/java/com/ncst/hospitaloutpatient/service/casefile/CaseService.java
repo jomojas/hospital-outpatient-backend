@@ -1,6 +1,6 @@
 package com.ncst.hospitaloutpatient.service.casefile;
 
-import ch.qos.logback.core.model.INamedModel;
+import com.ncst.hospitaloutpatient.common.enums.VisitStatus;
 import com.ncst.hospitaloutpatient.model.dto.casefile.*;
 import com.ncst.hospitaloutpatient.model.dto.casefile.MedicalItemApplyRequest.ApplyItem;
 import com.ncst.hospitaloutpatient.common.exception.BusinessException;
@@ -18,11 +18,41 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CaseService {
     @Autowired
     private CaseMapper caseMapper;
+
+    private enum FrontendPatientStatus {
+        WAITING_INITIAL, AFTER_INITIAL, WAITING_REVISIT, REVISIT_COMPLETED
+    }
+
+    private static final List<VisitStatus> ALL_BACKEND_STATUSES = List.of(VisitStatus.values());
+
+    private static final Map<FrontendPatientStatus, List<VisitStatus>> STATUS_MAP = Map.of(
+        FrontendPatientStatus.WAITING_INITIAL, List.of(VisitStatus.WAITING_FOR_CONSULTATION),
+        FrontendPatientStatus.AFTER_INITIAL, List.of(
+            VisitStatus.INITIAL_CONSULTATION_DONE,
+            VisitStatus.WAITING_FOR_PROJECT_PAYMENT,
+            VisitStatus.WAITING_FOR_CHECKUP,
+            VisitStatus.CHECKING
+        ),
+        FrontendPatientStatus.WAITING_REVISIT, List.of(VisitStatus.WAITING_FOR_REVISIT),
+        FrontendPatientStatus.REVISIT_COMPLETED, ALL_BACKEND_STATUSES.subList(
+            VisitStatus.REVISITED.ordinal(), ALL_BACKEND_STATUSES.size()
+        )
+    );
+
+    private List<VisitStatus> convertFrontendStatus(String frontendStatus) {
+        try {
+            FrontendPatientStatus status = FrontendPatientStatus.valueOf(frontendStatus);
+            return STATUS_MAP.getOrDefault(status, List.of());
+        } catch (IllegalArgumentException e) {
+            return List.of();
+        }
+    }
 
     public Integer getCurrentStaffId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -162,14 +192,22 @@ public class CaseService {
         return dto;
     }
 
-    public List<DoctorPatientDTO> getRegisteredPatientsByDoctor(int page, int pageSize, String keyword) {
+    public List<DoctorPatientDTO> getRegisteredPatientsByDoctor(int page, int pageSize, String keyword, String frontendStatus) {
         Integer doctorId = getCurrentStaffId();
         int offset = (page - 1) * pageSize;
-        return caseMapper.selectRegisteredPatientsByDoctor(doctorId, keyword, offset, pageSize);
+        List<VisitStatus> backendStatuses = convertFrontendStatus(frontendStatus);
+        List<String> statusList = backendStatuses.stream()
+            .map(Enum::name)
+            .toList();
+        return caseMapper.selectRegisteredPatientsByDoctor(doctorId, keyword, offset, pageSize, statusList);
     }
 
-    public long countRegisteredPatientsByDoctor(String keyword) {
+    public long countRegisteredPatientsByDoctor(String keyword, String frontendStatus) {
         Integer doctorId = getCurrentStaffId();
-        return caseMapper.countRegisteredPatientsByDoctor(doctorId, keyword);
+        List<VisitStatus> backendStatuses = convertFrontendStatus(frontendStatus);
+        List<String> statusList = backendStatuses.stream()
+            .map(Enum::name)
+            .toList();
+        return caseMapper.countRegisteredPatientsByDoctor(doctorId, keyword, statusList);
     }
 }
