@@ -147,6 +147,7 @@
                     #{status}
                 </foreach>
             </if>
+            AND pv.visit_date = #{visitDate}
         ORDER BY pv.visit_date DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
@@ -172,6 +173,53 @@
                     #{status}
                 </foreach>
             </if>
+            AND pv.visit_date = #{visitDate}
+    </select>
+
+    <select id="selectAllRegisteredPatientsByDoctor" resultType="com.ncst.hospitaloutpatient.model.dto.casefile.DoctorPatientDTO">
+        SELECT
+            p.name,
+            p.patient_no AS medicalNo,
+            pv.current_status AS status,
+            pv.visit_date AS registrationDate,
+            mr.chief_complaint AS complaint
+        FROM
+            patient_visit pv
+            JOIN patient p ON pv.patient_id = p.patient_id
+            LEFT JOIN medical_record mr ON pv.registration_id = mr.registration_id
+        WHERE
+            pv.doctor_id = #{doctorId}
+            <if test="statusList != null and statusList.size() > 0">
+                AND pv.current_status IN
+                <foreach collection="statusList" item="status" open="(" separator="," close=")">
+                    #{status}
+                </foreach>
+            </if>
+            AND pv.visit_date = #{visitDate}
+        ORDER BY pv.visit_date DESC
+    </select>
+
+    <select id="selectPatientDetailByMedicalNo" resultType="com.ncst.hospitaloutpatient.model.dto.casefile.DoctorPatientDetailDTO">
+        SELECT
+            p.patient_id AS patientId,
+            p.patient_no AS patientNo,
+            p.name,
+            p.gender,
+            p.birthday,
+            p.id_card AS idCard,
+            p.address,
+            p.patient_no AS medicalNo,
+            pv.current_status AS status,
+            pv.visit_date AS registrationDate,
+            mr.chief_complaint AS complaint
+        FROM
+            patient_visit pv
+            JOIN patient p ON pv.patient_id = p.patient_id
+            LEFT JOIN medical_record mr ON pv.registration_id = mr.registration_id
+        WHERE
+            p.patient_no = #{medicalNo}
+        ORDER BY pv.visit_date DESC
+        LIMIT 1
     </select>
 
 </mapper>

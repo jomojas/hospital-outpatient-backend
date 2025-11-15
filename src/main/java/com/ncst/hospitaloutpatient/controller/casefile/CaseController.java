@@ -83,4 +83,18 @@ public class CaseController {
         long total = caseService.countRegisteredPatientsByDoctor(keyword, status);
         return ApiResponse.pageOk(data, page, pageSize, total);
     }
+
+    @GetMapping("/registrations/patients/status-count")
+    public ApiResponse<Map<String, Long>> countPatientsByFrontendStatus(
+    ) {
+        Map<String, Long> statusCount = caseService.countPatientsByFrontendStatus();
+        return ApiResponse.ok(statusCount);
+    }
+
+    @GetMapping("/registrations/patients/{medicalNo}/detail")
+    public ApiResponse<DoctorPatientDetailDTO> getPatientDetailByMedicalNo(
+            @PathVariable String medicalNo) {
+        DoctorPatientDetailDTO detail = caseService.getPatientDetailByMedicalNo(medicalNo);
+        return ApiResponse.ok(detail);
+    }
 }

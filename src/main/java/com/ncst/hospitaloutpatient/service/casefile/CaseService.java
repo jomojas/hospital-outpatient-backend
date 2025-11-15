@@ -2,7 +2,6 @@ package com.ncst.hospitaloutpatient.service.casefile;
 
 import com.ncst.hospitaloutpatient.common.enums.VisitStatus;
 import com.ncst.hospitaloutpatient.model.dto.casefile.*;
-import com.ncst.hospitaloutpatient.model.dto.casefile.MedicalItemApplyRequest.ApplyItem;
 import com.ncst.hospitaloutpatient.common.exception.BusinessException;
 import com.ncst.hospitaloutpatient.mapper.casefile.CaseMapper;
 import com.ncst.hospitaloutpatient.model.entity.casefile.MedicalItemApply;
@@ -17,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -195,19 +195,50 @@ public class CaseService {
     public List<DoctorPatientDTO> getRegisteredPatientsByDoctor(int page, int pageSize, String keyword, String frontendStatus) {
         Integer doctorId = getCurrentStaffId();
         int offset = (page - 1) * pageSize;
-        List<VisitStatus> backendStatuses = convertFrontendStatus(frontendStatus);
-        List<String> statusList = backendStatuses.stream()
-            .map(Enum::name)
-            .toList();
-        return caseMapper.selectRegisteredPatientsByDoctor(doctorId, keyword, offset, pageSize, statusList);
+        List<String> statusList = null;
+        if (frontendStatus != null) {
+            List<VisitStatus> backendStatuses = convertFrontendStatus(frontendStatus);
+            statusList = backendStatuses.stream().map(Enum::name).toList();
+        }
+        java.time.LocalDate visitDate = java.time.LocalDate.now();
+        return caseMapper.selectRegisteredPatientsByDoctor(doctorId, keyword, offset, pageSize, statusList, visitDate);
     }
 
     public long countRegisteredPatientsByDoctor(String keyword, String frontendStatus) {
         Integer doctorId = getCurrentStaffId();
-        List<VisitStatus> backendStatuses = convertFrontendStatus(frontendStatus);
-        List<String> statusList = backendStatuses.stream()
-            .map(Enum::name)
-            .toList();
-        return caseMapper.countRegisteredPatientsByDoctor(doctorId, keyword, statusList);
+        List<String> statusList = null;
+        if (frontendStatus != null) {
+            List<VisitStatus> backendStatuses = convertFrontendStatus(frontendStatus);
+            statusList = backendStatuses.stream().map(Enum::name).toList();
+        }
+        java.time.LocalDate visitDate = java.time.LocalDate.now();
+        return caseMapper.countRegisteredPatientsByDoctor(doctorId, keyword, statusList, visitDate);
+    }
+
+    public Map<String, Long> countPatientsByFrontendStatus() {
+        Integer doctorId = getCurrentStaffId();
+        java.time.LocalDate visitDate = java.time.LocalDate.now();
+        List<DoctorPatientDTO> patients = caseMapper.selectAllRegisteredPatientsByDoctor(doctorId, null, visitDate);
+
+        Map<String, Long> result = new LinkedHashMap<>();
+        for (FrontendPatientStatus frontendStatus : FrontendPatientStatus.values()) {
+            List<VisitStatus> backendStatuses = STATUS_MAP.getOrDefault(frontendStatus, List.of());
+            long count = patients.stream()
+                    .filter(p -> {
+                        try {
+                            VisitStatus status = VisitStatus.valueOf(p.getStatus());
+                            return backendStatuses.contains(status);
+                        } catch (Exception e) {
+                            return false;
+                        }
+                    })
+                    .count();
+            result.put(frontendStatus.name(), count);
+        }
+        return result;
+    }
+
+    public DoctorPatientDetailDTO getPatientDetailByMedicalNo(String medicalNo) {
+        return caseMapper.selectPatientDetailByMedicalNo(medicalNo);
     }
 }

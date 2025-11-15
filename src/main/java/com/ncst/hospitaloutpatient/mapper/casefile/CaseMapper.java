@@ -51,12 +51,22 @@ public interface CaseMapper {
         @Param("keyword") String keyword,
         @Param("offset") int offset,
         @Param("limit") int limit,
-        @Param("statusList") List<String> statusList
+        @Param("statusList") List<String> statusList,
+        @Param("visitDate") java.time.LocalDate visitDate
+    );
+
+    List<DoctorPatientDTO> selectAllRegisteredPatientsByDoctor(
+        @Param("doctorId") Integer doctorId,
+        @Param("statusList") List<String> statusList,
+        @Param("visitDate") java.time.LocalDate visitDate
     );
 
     long countRegisteredPatientsByDoctor(
-            @Param("doctorId") Integer doctorId,
-            @Param("keyword") String keyword,
-            @Param("statusList") List<String> statusList
+        @Param("doctorId") Integer doctorId,
+        @Param("keyword") String keyword,
+        @Param("statusList") List<String> statusList,
+        @Param("visitDate") java.time.LocalDate visitDate
     );
+
+    DoctorPatientDetailDTO selectPatientDetailByMedicalNo(@Param("medicalNo") String medicalNo);
 }
