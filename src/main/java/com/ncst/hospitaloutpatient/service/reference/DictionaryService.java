@@ -1,5 +1,6 @@
 package com.ncst.hospitaloutpatient.service.reference;
 
+import com.ncst.hospitaloutpatient.common.enums.DrugUnit;
 import com.ncst.hospitaloutpatient.common.enums.Period;
 import com.ncst.hospitaloutpatient.common.enums.MedicalItemType;
 import com.ncst.hospitaloutpatient.mapper.reference.DictionaryMapper;
@@ -43,5 +44,9 @@ public class DictionaryService {
         return Arrays.stream(MedicalItemType.values())
                 .map(type -> new ProjectTypeResponse(type.name(), type.getLabel()))
                 .collect(Collectors.toList());
+    }
+
+    public List<DrugUnit> listDrugUnits() {
+        return Arrays.asList(DrugUnit.values());
     }
 }

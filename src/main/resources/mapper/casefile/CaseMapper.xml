@@ -11,6 +11,26 @@
             (#{patientNo}, #{registrationId}, #{chiefComplaint}, #{presentHistory}, #{physicalExam}, #{diagnosis}, #{treatmentPlan}, #{doctorId}, #{recordTime})
     </insert>
 
+    <select id="selectRecordIdByRegistrationId" resultType="java.lang.Integer">
+        SELECT record_id
+        FROM medical_record
+        WHERE registration_id = #{registrationId}
+            LIMIT 1
+    </select>
+
+    <select id="selectCaseDetailById" resultType="com.ncst.hospitaloutpatient.model.dto.casefile.CaseDetailDTO">
+        SELECT
+            patient_no AS patientNo,
+            registration_id AS registrationId,
+            chief_complaint AS chiefComplaint,
+            present_history AS presentHistory,
+            physical_exam AS physicalExam,
+            diagnosis,
+            treatment_plan AS treatmentPlan
+        FROM medical_record
+        WHERE record_id = #{caseId}
+    </select>
+
     <update id="updateCase">
         UPDATE medical_record
         SET
@@ -20,9 +40,7 @@
             present_history = #{dto.presentHistory},
             physical_exam = #{dto.physicalExam},
             diagnosis = #{dto.diagnosis},
-            treatment_plan = #{dto.treatmentPlan},
-            doctor_id = #{dto.doctorId},
-            record_time = #{dto.recordTime}
+            treatment_plan = #{dto.treatmentPlan}
         WHERE
             record_id = #{caseId}
     </update>
@@ -124,6 +142,7 @@
     <!-- 查询挂号患者列表 -->
     <select id="selectRegisteredPatientsByDoctor" resultType="com.ncst.hospitaloutpatient.model.dto.casefile.DoctorPatientDTO">
         SELECT
+            pv.registration_id AS registrationId,
             p.name,
             p.patient_no AS medicalNo,
             pv.current_status AS status,
@@ -220,6 +239,33 @@
             p.patient_no = #{medicalNo}
         ORDER BY pv.visit_date DESC
         LIMIT 1
+    </select>
+
+    <resultMap id="ClinicWorkspaceContextRawMap" type="com.ncst.hospitaloutpatient.model.dto.casefile.ClinicWorkspaceContextRawDTO">
+        <result property="registrationId" column="registration_id"/>
+        <result property="medicalNo" column="patient_no"/>
+        <result property="patientName" column="name"/>
+        <result property="patientGender" column="gender"/>
+        <result property="birthDate" column="birthday"/>
+        <result property="visitStatus" column="current_status"/>
+        <result property="caseId" column="record_id"/>
+    </resultMap>
+
+    <select id="selectClinicContextByRegistrationId"
+            resultMap="ClinicWorkspaceContextRawMap">
+        SELECT
+            pv.registration_id,
+            p.patient_no,
+            p.name,
+            p.gender,
+            p.birthday,
+            pv.current_status,
+            mr.record_id
+        FROM patient_visit pv
+                 JOIN patient p ON pv.patient_id = p.patient_id
+                 LEFT JOIN medical_record mr ON pv.registration_id = mr.registration_id
+        WHERE pv.registration_id = #{registrationId}
+            LIMIT 1
     </select>
 
 </mapper>

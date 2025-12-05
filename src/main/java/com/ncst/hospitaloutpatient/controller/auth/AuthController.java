@@ -42,6 +42,7 @@ public class AuthController {
         Map<String, String> data = Map.of(
                 "token", token,
                 "role", user.getRole(),
+                "userId", String.valueOf(user.getId()),
                 "departmentType", user.getDepartmentType(),
                 "name", user.getStaffName(),
                 "lastLoginTime", user.getLastLoginTime(),

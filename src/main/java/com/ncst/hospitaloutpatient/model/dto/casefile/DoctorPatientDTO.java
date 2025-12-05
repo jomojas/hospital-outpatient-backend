@@ -9,6 +9,9 @@ import java.time.LocalDate;
 @Schema(description = "医生挂号患者信息")
 public class DoctorPatientDTO {
 
+    @Schema(description = "挂号ID", example = "12345")
+    private Integer registrationId;
+
     @Schema(description = "患者姓名", example = "张三")
     private String name;
 

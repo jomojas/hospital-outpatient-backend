@@ -15,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +41,9 @@ public class CaseService {
             VisitStatus.WAITING_FOR_CHECKUP,
             VisitStatus.CHECKING
         ),
-        FrontendPatientStatus.WAITING_REVISIT, List.of(VisitStatus.WAITING_FOR_REVISIT),
+        FrontendPatientStatus.WAITING_REVISIT, List.of(VisitStatus.WAITING_FOR_REVISIT, VisitStatus.REVISITED),
         FrontendPatientStatus.REVISIT_COMPLETED, ALL_BACKEND_STATUSES.subList(
-            VisitStatus.REVISITED.ordinal(), ALL_BACKEND_STATUSES.size()
+            VisitStatus.WAITING_FOR_PRESCRIPTION_PAYMENT.ordinal(), ALL_BACKEND_STATUSES.size()
         )
     );
 
@@ -79,8 +81,8 @@ public class CaseService {
         record.setPhysicalExam(request.getPhysicalExam());
         record.setDiagnosis(request.getDiagnosis());
         record.setTreatmentPlan(request.getTreatmentPlan());
-        record.setDoctorId(request.getDoctorId());
-        record.setRecordTime(LocalDateTime.parse(request.getRecordTime()));
+        record.setDoctorId(getCurrentStaffId());
+        record.setRecordTime(LocalDateTime.now());
         int result = caseMapper.insertMedicalRecord(record);
         if (result != 1) {
             throw new BusinessException(500, "创建病案失败");
@@ -97,8 +99,28 @@ public class CaseService {
         return recordId;
     }
 
-    public void updateCase(Long caseId, CaseRequestDTO request) {
+    public Integer getRecordIdByRegistrationId(Integer registrationId) {
+        return caseMapper.selectRecordIdByRegistrationId(registrationId);
+    }
+
+    public CaseDetailDTO getCaseDetailById(Integer caseId) {
+        return caseMapper.selectCaseDetailById(caseId);
+    }
+
+    public void updateCase(Integer caseId, CaseRequestDTO request) {
         caseMapper.updateCase(caseId, request);
+    }
+
+    public void confirmCase(Integer caseId, CaseRequestDTO request) {
+        caseMapper.updateCase(caseId, request);
+        // 更新 patient_visit 状态为 REVISITED
+        Integer registrationId = caseMapper.selectRegistrationIdByRecordId(caseId);
+        if (registrationId != null) {
+            int row = caseMapper.updatePatientVisitStatusByRegistrationId(registrationId, "REVISITED");
+            if (row != 1) {
+                throw new BusinessException(500, "更新就诊状态失败");
+            }
+        }
     }
 
     @Transactional
@@ -130,16 +152,7 @@ public class CaseService {
 
     public List<CaseApplyResultDTO> listCaseResults(Integer recordId) {
         // 先查结果
-        List<CaseApplyResultDTO> results = caseMapper.selectCaseApplyResults(recordId);
-        // 更新 patient_visit 状态为 REVISITED
-        Integer registrationId = caseMapper.selectRegistrationIdByRecordId(recordId);
-        if (registrationId != null) {
-            int row = caseMapper.updatePatientVisitStatusByRegistrationId(registrationId, "REVISITED");
-            if (row != 1) {
-                throw new BusinessException(500, "更新就诊状态失败");
-            }
-        }
-        return results;
+        return caseMapper.selectCaseApplyResults(recordId);
     }
 
     public void createPrescriptions(Integer recordId, PrescriptionCreateRequest request) {
@@ -240,5 +253,37 @@ public class CaseService {
 
     public DoctorPatientDetailDTO getPatientDetailByMedicalNo(String medicalNo) {
         return caseMapper.selectPatientDetailByMedicalNo(medicalNo);
+    }
+
+    public ClinicWorkspaceContextDTO getClinicContextByRegistrationId(Integer registrationId) {
+        ClinicWorkspaceContextRawDTO raw = caseMapper.selectClinicContextByRegistrationId(registrationId);
+        if (raw == null) {
+            return null;
+        }
+        ClinicWorkspaceContextDTO dto = new ClinicWorkspaceContextDTO();
+        dto.setRegistrationId(raw.getRegistrationId());
+        dto.setMedicalNo(raw.getMedicalNo());
+        dto.setPatientName(raw.getPatientName());
+        dto.setPatientGender(raw.getPatientGender());
+        dto.setVisitStatus(raw.getVisitStatus());
+        dto.setCaseId(raw.getCaseId());
+        dto.setPatientAge(formatAge(raw.getBirthDate()));
+        return dto;
+    }
+
+    private String formatAge(LocalDate birthDate) {
+        if (birthDate == null) return null;
+        LocalDate now = LocalDate.now();
+        if (birthDate.isAfter(now)) return null;
+        Period p = Period.between(birthDate, now);
+        if (p.getYears() > 0) {
+            return String.valueOf(p.getYears());
+        }
+        // For infants, show X岁Y月 style as requested; here simplified to months.
+        int months = p.getMonths() + p.getYears() * 12;
+        if (months > 0) {
+            return months + "月";
+        }
+        return "0";
     }
 }

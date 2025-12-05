@@ -43,6 +43,7 @@
 - GET /api/dictionaries/payment-methods → listPaymentMethods()
 - GET /api/dictionaries/drug-categories → listDrugCategories()
 - GET /api/dictionaries/item-types → listItemTypes()
+- GET /api/dictionaries/drug-units → listDrugUnits()
 
 文件：com/ncst/hospitaloutpatient/controller/reference/CatalogController.java
 

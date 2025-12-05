@@ -28,10 +28,32 @@ public class CaseController {
         return ApiResponse.ok(result);
     }
 
+    @GetMapping("/registration/{registrationId}/record-id")
+    @Operation(summary = "根据挂号ID获取病案ID", description = "返回对应的recordId, 如果没有则返回null")
+    public ApiResponse<Integer> getRecordIdByRegistrationId(
+            @PathVariable Integer registrationId) {
+        Integer recordId = caseService.getRecordIdByRegistrationId(registrationId);
+        return ApiResponse.ok(recordId);
+    }
+
+    @GetMapping("/{caseId}")
+    @Operation(summary = "获取病案详细信息", description = "根据caseId获取已填写的病案信息，可能为空")
+    public ApiResponse<CaseDetailDTO> getCaseDetail(@PathVariable Integer caseId) {
+        CaseDetailDTO dto = caseService.getCaseDetailById(caseId);
+        return ApiResponse.ok(dto);
+    }
+
     @PutMapping("/{caseId}")
     @Operation(summary = "更新病案", description = "根据caseId更新病案信息")
-    public ApiResponse<?> updateCase(@PathVariable Long caseId, @RequestBody CaseRequestDTO request) {
+    public ApiResponse<?> updateCase(@PathVariable Integer caseId, @RequestBody CaseRequestDTO request) {
         caseService.updateCase(caseId, request);
+        return ApiResponse.ok();
+    }
+
+    @PutMapping("/{caseId}/diagnosis")
+    @Operation(summary = "确诊病案", description = "根据caseId确诊病案信息")
+    public ApiResponse<?> confirmCase(@PathVariable Integer caseId, @RequestBody CaseRequestDTO request) {
+        caseService.confirmCase(caseId, request);
         return ApiResponse.ok();
     }
 
@@ -96,5 +118,12 @@ public class CaseController {
             @PathVariable String medicalNo) {
         DoctorPatientDetailDTO detail = caseService.getPatientDetailByMedicalNo(medicalNo);
         return ApiResponse.ok(detail);
+    }
+
+    @GetMapping("/registrations/{registrationId}/context")
+    @Operation(summary = "获取诊疗上下文信息", description = "根据挂号ID返回患者基础信息、当前状态和病案ID(可能为null)")
+    public ApiResponse<ClinicWorkspaceContextDTO> getClinicContext(@PathVariable Integer registrationId) {
+        ClinicWorkspaceContextDTO dto = caseService.getClinicContextByRegistrationId(registrationId);
+        return ApiResponse.ok(dto);
     }
 }

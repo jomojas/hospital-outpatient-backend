@@ -26,10 +26,4 @@ public class CaseRequestDTO {
 
     @Schema(description = "治疗方案", example = "口服阿莫西林")
     private String treatmentPlan;
-
-    @Schema(description = "医生ID", example = "1")
-    private Integer doctorId;
-
-    @Schema(description = "记录时间", example = "2025-09-01T09:30:00")
-    private String recordTime;
 }

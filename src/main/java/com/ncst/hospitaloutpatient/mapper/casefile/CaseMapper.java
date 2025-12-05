@@ -15,7 +15,11 @@ public interface CaseMapper {
 
     int insertMedicalRecord(MedicalRecord medicalRecord);
 
-    void updateCase(@Param("caseId") Long caseId, @Param("dto") CaseRequestDTO dto);
+    Integer selectRecordIdByRegistrationId(@Param("registrationId") Integer registrationId);
+
+    CaseDetailDTO selectCaseDetailById(@Param("caseId") Integer caseId);
+
+    void updateCase(@Param("caseId") Integer caseId, @Param("dto") CaseRequestDTO dto);
 
     int insertMedicalItemApply(MedicalItemApply apply);
 
@@ -69,4 +73,6 @@ public interface CaseMapper {
     );
 
     DoctorPatientDetailDTO selectPatientDetailByMedicalNo(@Param("medicalNo") String medicalNo);
+
+    ClinicWorkspaceContextRawDTO selectClinicContextByRegistrationId(@Param("registrationId") Integer registrationId);
 }

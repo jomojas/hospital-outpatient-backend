@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
-@Schema(description = "创建病案请求体")
-public class MedicalRecordCreateRequest {
+@Schema(description = "病案详细信息")
+public class CaseDetailDTO {
     @Schema(description = "患者编号", example = "PNO001")
     private String patientNo;
 

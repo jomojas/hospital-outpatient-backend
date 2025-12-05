@@ -1,5 +1,6 @@
 package com.ncst.hospitaloutpatient.controller.reference;
 
+import com.ncst.hospitaloutpatient.common.enums.DrugUnit;
 import com.ncst.hospitaloutpatient.common.response.ApiResponse;
 import com.ncst.hospitaloutpatient.mapper.reference.DictionaryMapper;
 import com.ncst.hospitaloutpatient.model.dto.reference.*;
@@ -71,5 +72,11 @@ public class DictionaryController {
     public ApiResponse<List<ProjectTypeResponse>> listItemTypes() {
         List<ProjectTypeResponse> categories = dictionaryService.listItemTypes();
         return ApiResponse.ok(categories);
+    }
+
+    @GetMapping("/drug-units")
+    @Operation(summary = "列举所有药品单位", description = "获取系统中所有药品单位的列表")
+    public List<DrugUnit> listDrugUnits() {
+        return dictionaryService.listDrugUnits();
     }
 }
