@@ -268,4 +268,10 @@
             LIMIT 1
     </select>
 
+    <update id="updateVisitStatusToFinished">
+        UPDATE patient_visit
+        SET current_status = 'FINISHED'
+        WHERE registration_id = #{registrationId}
+    </update>
+
 </mapper>

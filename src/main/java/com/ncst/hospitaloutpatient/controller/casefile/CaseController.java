@@ -126,4 +126,11 @@ public class CaseController {
         ClinicWorkspaceContextDTO dto = caseService.getClinicContextByRegistrationId(registrationId);
         return ApiResponse.ok(dto);
     }
+
+    @PostMapping("/registrations/{registrationId}/finish")
+    @Operation(summary = "强制完成患者就诊过程", description = "根据挂号ID强制完成患者就诊，设置状态为FINISHED")
+    public ApiResponse<ClinicWorkspaceContextDTO> finishVisit(@PathVariable Integer registrationId) {
+        caseService.finishVisit(registrationId);
+        return ApiResponse.ok();
+    }
 }

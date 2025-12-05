@@ -75,4 +75,6 @@ public interface CaseMapper {
     DoctorPatientDetailDTO selectPatientDetailByMedicalNo(@Param("medicalNo") String medicalNo);
 
     ClinicWorkspaceContextRawDTO selectClinicContextByRegistrationId(@Param("registrationId") Integer registrationId);
+
+    int updateVisitStatusToFinished(@Param("registrationId") Integer registrationId);
 }

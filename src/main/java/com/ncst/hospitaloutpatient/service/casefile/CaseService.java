@@ -70,6 +70,22 @@ public class CaseService {
         return null;
     }
 
+    private String formatAge(LocalDate birthDate) {
+        if (birthDate == null) return null;
+        LocalDate now = LocalDate.now();
+        if (birthDate.isAfter(now)) return null;
+        Period p = Period.between(birthDate, now);
+        if (p.getYears() > 0) {
+            return String.valueOf(p.getYears());
+        }
+        // For infants, show X岁Y月 style as requested; here simplified to months.
+        int months = p.getMonths() + p.getYears() * 12;
+        if (months > 0) {
+            return months + "月";
+        }
+        return "0";
+    }
+
 
     @Transactional
     public Integer createMedicalRecord(MedicalRecordCreateRequest request) {
@@ -271,19 +287,7 @@ public class CaseService {
         return dto;
     }
 
-    private String formatAge(LocalDate birthDate) {
-        if (birthDate == null) return null;
-        LocalDate now = LocalDate.now();
-        if (birthDate.isAfter(now)) return null;
-        Period p = Period.between(birthDate, now);
-        if (p.getYears() > 0) {
-            return String.valueOf(p.getYears());
-        }
-        // For infants, show X岁Y月 style as requested; here simplified to months.
-        int months = p.getMonths() + p.getYears() * 12;
-        if (months > 0) {
-            return months + "月";
-        }
-        return "0";
+    public void finishVisit(Integer registrationId) {
+        caseMapper.updateVisitStatusToFinished(registrationId);
     }
 }
