@@ -13,8 +13,8 @@ public enum VisitStatus {
     REVISITED("已复诊"),
     WAITING_FOR_PRESCRIPTION_PAYMENT("待处方缴费"),
     WAITING_FOR_MEDICINE("待取药"),
-    MEDICINE_TAKEN("已取药"),
-    MEDICINE_RETURNED("已退药"),
+//    MEDICINE_TAKEN("已取药"),
+//    MEDICINE_RETURNED("已退药"),
     FINISHED("诊疗结束");
 
     private final String label;

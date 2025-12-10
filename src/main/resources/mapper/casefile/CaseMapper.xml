@@ -54,22 +54,45 @@
 
     <select id="selectCaseApplyResults" resultType="com.ncst.hospitaloutpatient.model.dto.casefile.CaseApplyResultDTO">
         SELECT
-            apply_id AS applyId,
-            item_id AS itemId,
-            apply_type AS applyType,
-            apply_purpose AS applyPurpose,
-            apply_site AS applySite,
-            apply_time AS applyTime,
-            performer_id AS performerId,
-            result_recorder_id AS resultRecorderId,
-            perform_time AS performTime,
-            result,
-            status,
-            unit,
-            remark
-        FROM medical_item_apply
-        WHERE record_id = #{recordId}
-        ORDER BY apply_time ASC
+            mia.apply_id              AS applyId,
+            mia.item_id               AS itemId,
+            msi.item_name             AS itemName,
+            mia.apply_type            AS applyType,
+            mia.apply_purpose         AS applyPurpose,
+            mia.apply_site            AS applySite,
+            mia.apply_time            AS applyTime,
+            mia.performer_id          AS performerId,
+            st.name                   AS performerName,
+            mia.result_recorder_id    AS resultRecorderId,
+            mia.perform_time          AS performTime,
+            mia.result                AS result,
+            mia.status                AS status,
+            mia.unit                  AS unit,
+            mia.remark                AS remark
+        FROM medical_item_apply mia
+                 JOIN medical_service_item msi ON mia.item_id = msi.item_id
+                 LEFT JOIN staff st ON mia.performer_id = st.staff_id
+        WHERE mia.record_id = #{recordId}
+        ORDER BY mia.apply_time DESC
+    </select>
+
+    <select id="selectPrescriptionsByCaseId" resultType="com.ncst.hospitaloutpatient.model.dto.casefile.PrescriptionHistoryDTO">
+      SELECT
+        p.prescription_id  AS prescriptionId,
+        p.drug_id          AS drugId,
+        d.drug_name        AS drugName,
+        d.drug_code        AS drugCode,
+        d.specification    AS specification,
+        d.unit             AS unit,
+        CAST(d.retail_price AS CHAR) AS price,
+        p.dosage           AS dosage,
+        p.quantity         AS quantity,
+        p.status           AS status,
+        DATE_FORMAT(p.prescribe_time, '%Y-%m-%d %H:%i:%s') AS createTime
+      FROM prescription p
+      LEFT JOIN drug d ON d.drug_id = p.drug_id
+      WHERE p.record_id = #{caseId}
+      ORDER BY p.prescribe_time DESC
     </select>
 
     <insert id="insertPrescription" parameterType="com.ncst.hospitaloutpatient.model.entity.casefile.Prescription" useGeneratedKeys="true" keyProperty="prescriptionId">
@@ -89,27 +112,34 @@
         SELECT payable_amount FROM registration WHERE registration_id = #{registrationId}
     </select>
 
-    <!-- 3. 查医疗项目费（join medical_service_item） -->
+    <!-- 3. Query medical item fees -->
     <select id="selectMedicalItemFees" resultType="com.ncst.hospitaloutpatient.model.dto.casefile.ItemFeeDTO">
         SELECT
+            msi.item_id AS itemId,
             msi.item_name AS itemName,
-            msi.price AS price,
+            CAST(ROUND(msi.price, 2) AS CHAR) AS price,
             mia.unit AS unit,
-            (msi.price * mia.unit) AS amount
+            CAST(ROUND(msi.price * mia.unit, 2) AS CHAR) AS amount,
+            mia.status AS status,
+            DATE_FORMAT(mia.apply_time, '%Y-%m-%d %H:%i:%s') AS createTime
         FROM medical_item_apply mia
-                 JOIN medical_service_item msi ON mia.item_id = msi.item_id
+        JOIN medical_service_item msi ON mia.item_id = msi.item_id
         WHERE mia.record_id = #{recordId}
     </select>
 
-    <!-- 4. 查处方药品费（join drug） -->
+    <!-- 4. Query prescription drug fees -->
     <select id="selectPrescriptionFees" resultType="com.ncst.hospitaloutpatient.model.dto.casefile.DrugFeeDTO">
         SELECT
+            d.drug_id AS drugId,
             d.drug_name AS drugName,
-            d.retail_price AS price,
+            d.specification AS specification,
+            CAST(ROUND(d.retail_price, 2) AS CHAR) AS price,
             p.quantity AS quantity,
-            (d.retail_price * p.quantity) AS amount
+            CAST(ROUND(d.retail_price * p.quantity, 2) AS CHAR) AS amount,
+            p.status AS status,
+            DATE_FORMAT(p.prescribe_time, '%Y-%m-%d %H:%i:%s') AS createTime
         FROM prescription p
-                 JOIN drug d ON p.drug_id = d.drug_id
+        JOIN drug d ON p.drug_id = d.drug_id
         WHERE p.record_id = #{recordId}
     </select>
 
@@ -127,6 +157,13 @@
         WHERE registration_id = #{registrationId}
     </update>
 
+    <select id="selectPatientVisitStatusByRegistrationId" resultType="string">
+        SELECT current_status
+        FROM patient_visit
+        WHERE registration_id = #{registrationId}
+            LIMIT 1
+    </select>
+
     <!-- 查 registration_id -->
     <select id="selectRegistrationIdByRecordId" resultType="int">
         SELECT registration_id FROM medical_record WHERE record_id = #{recordId}
@@ -135,8 +172,47 @@
     <!-- 更新 patient_visit 的 current_status -->
     <update id="updatePatientVisitStatusByRegistrationId">
         UPDATE patient_visit
-        SET current_status = #{status}
+        SET current_status = #{status},
+            status_changed_at = NOW()
         WHERE registration_id = #{registrationId}
+    </update>
+
+    <!-- Atomically reduce stock when sufficient -->
+    <update id="reduceDrugStock">
+        UPDATE drug
+        SET stock_quantity = stock_quantity - #{quantity}
+        WHERE drug_id = #{drugId}
+          AND stock_quantity >= #{quantity}
+    </update>
+
+    <!-- 撤销处方: 仅当当前状态为 PENDING_PAYMENT 时置为 REVOKED -->
+    <update id="updatePrescriptionStatusToRevoked">
+        UPDATE prescription
+        SET status = 'REVOKED'
+        WHERE prescription_id = #{prescriptionId}
+          AND status = 'PENDING_PAYMENT'
+    </update>
+
+    <select id="selectPrescriptionById" resultType="com.ncst.hospitaloutpatient.model.entity.casefile.Prescription">
+        SELECT
+            prescription_id AS prescriptionId,
+            record_id       AS recordId,
+            registration_id AS registrationId,
+            drug_id         AS drugId,
+            dosage          AS dosage,
+            quantity        AS quantity,
+            prescribe_time  AS prescribeTime,
+            status          AS status,
+            remark          AS remark
+        FROM prescription
+        WHERE prescription_id = #{prescriptionId}
+            LIMIT 1
+    </select>
+
+    <update id="increaseDrugStock">
+        UPDATE drug
+        SET stock_quantity = stock_quantity + #{quantity}
+        WHERE drug_id = #{drugId}
     </update>
 
     <!-- 查询挂号患者列表 -->
@@ -273,5 +349,46 @@
         SET current_status = 'FINISHED'
         WHERE registration_id = #{registrationId}
     </update>
+
+    <update id="updateApplyStatusToRevoked">
+        UPDATE medical_item_apply
+        SET status = 'REVOKED'
+        WHERE apply_id = #{applyId}
+          AND status = 'PENDING_PAYMENT'
+    </update>
+
+    <!-- Get registrationId by applyId -->
+    <select id="selectRegistrationIdByApplyId" resultType="int">
+        SELECT registration_id
+        FROM medical_item_apply
+        WHERE apply_id = #{applyId}
+            LIMIT 1
+    </select>
+
+    <!-- Count remaining applies with status PENDING_PAYMENT or UNFINISHED -->
+    <select id="countPendingOrUnfinishedAppliesByRegistrationId" resultType="int">
+        SELECT COUNT(1)
+        FROM medical_item_apply
+        WHERE registration_id = #{registrationId}
+          AND status IN ('PENDING_PAYMENT','UNFINISHED')
+    </select>
+
+    <select id="selectCaseItemsHistory" resultType="com.ncst.hospitaloutpatient.model.dto.casefile.CaseItemHistoryDTO">
+        SELECT
+            mia.apply_id      AS applyId,
+            mia.item_id       AS itemId,
+            msi.item_name     AS itemName,
+            msi.item_code     AS itemCode,
+            mia.apply_type    AS itemType,
+            mia.status        AS status,
+            CAST(msi.price AS CHAR) AS price,
+            mia.unit          AS unit,
+            mia.apply_time    AS createTime
+        FROM medical_item_apply mia
+                 JOIN medical_service_item msi ON mia.item_id = msi.item_id
+        WHERE mia.record_id = #{recordId}
+          AND mia.status IN ('PENDING_PAYMENT','UNFINISHED','FINISHED','CANCELLED','REVOKED')
+        ORDER BY mia.apply_time DESC
+    </select>
 
 </mapper>

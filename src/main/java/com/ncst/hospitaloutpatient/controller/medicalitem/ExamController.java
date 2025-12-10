@@ -30,17 +30,17 @@ public class ExamController {
         return ApiResponse.pageOk(applies, page, pageSize, total);
     }
 
-    @PostMapping("/applies/{applyId}/cancel")
-    @Operation(
-            summary = "取消医疗项目申请",
-            description = "只有在patient_visit.current_status为WAITING_FOR_CHECKUP时才能取消，取消后项目状态变为CANCELLED"
-    )
-    public ApiResponse<?> cancelExamApply(
-            @Parameter(description = "医疗项目申请ID", required = true)
-            @PathVariable Integer applyId) {
-        examService.cancelExamApply(applyId);
-        return ApiResponse.ok();
-    }
+//    @PostMapping("/applies/{applyId}/cancel")
+//    @Operation(
+//            summary = "取消医疗项目申请",
+//            description = "只有在patient_visit.current_status为WAITING_FOR_CHECKUP时才能取消，取消后项目状态变为CANCELLED"
+//    )
+//    public ApiResponse<?> cancelExamApply(
+//            @Parameter(description = "医疗项目申请ID", required = true)
+//            @PathVariable Integer applyId) {
+//        examService.cancelExamApply(applyId);
+//        return ApiResponse.ok();
+//    }
 
     @PostMapping("/applies/{applyId}/execute")
     @Operation(

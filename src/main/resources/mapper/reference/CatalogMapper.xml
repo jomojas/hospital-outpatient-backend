@@ -97,6 +97,7 @@
 
     <select id="selectDrugCatalog" resultType="com.ncst.hospitaloutpatient.model.dto.reference.DrugDetailResponse">
         SELECT
+        d.drug_id AS drugId,
         d.drug_code AS drugCode,
         d.drug_name AS drugName,
         d.category_id AS categoryId,

@@ -1,5 +1,6 @@
 package com.ncst.hospitaloutpatient.service.reference;
 
+import com.ncst.hospitaloutpatient.common.enums.DrugUnit;
 import com.ncst.hospitaloutpatient.common.enums.MedicalItemType;
 import com.ncst.hospitaloutpatient.mapper.reference.CatalogMapper;
 import com.ncst.hospitaloutpatient.model.dto.reference.DrugDetailResponse;
@@ -59,7 +60,11 @@ public class CatalogService {
 
     public List<DrugDetailResponse> listDrugCatalog(int page, int pageSize, String keyword, Integer categoryId) {
         int offset = (page - 1) * pageSize;
-        return catalogMapper.selectDrugCatalog(pageSize, offset, keyword, categoryId);
+        List<DrugDetailResponse> list = catalogMapper.selectDrugCatalog(pageSize, offset, keyword, categoryId);
+        for (DrugDetailResponse d : list) {
+            d.setUnit(DrugUnit.toLabel(d.getUnit()));
+        }
+        return list;
     }
 
     public int countDrugCatalog(String keyword, Integer categoryId) {

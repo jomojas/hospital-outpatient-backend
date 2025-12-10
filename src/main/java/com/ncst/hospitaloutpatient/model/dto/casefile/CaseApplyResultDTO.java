@@ -1,4 +1,5 @@
 package com.ncst.hospitaloutpatient.model.dto.casefile;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -12,6 +13,9 @@ public class CaseApplyResultDTO {
 
     @Schema(description = "医疗项目ID", example = "3")
     private Integer itemId;
+
+    @Schema(description = "医疗项目名称", example = "血常规")
+    private String itemName; // ✅ added
 
     @Schema(description = "申请类型(EXAM-检查/LAB-检验/DISPOSAL-处置)", example = "LAB")
     private String applyType;
@@ -27,6 +31,9 @@ public class CaseApplyResultDTO {
 
     @Schema(description = "执行人ID", example = "4")
     private Integer performerId;
+
+    @Schema(description = "执行人姓名", example = "李四")
+    private String performerName; // ✅ added
 
     @Schema(description = "结果记录人ID", example = "1")
     private Integer resultRecorderId;

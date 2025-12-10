@@ -7,6 +7,9 @@ import java.util.Date;
 
 @Data
 public class DrugDetailResponse {
+    @Schema(description = "药品Id", example = "1001s")
+    private String drugId;
+
     @Schema(description = "药品编码", example = "A001")
     private String drugCode;
 

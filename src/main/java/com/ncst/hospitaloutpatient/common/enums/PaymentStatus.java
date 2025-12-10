@@ -13,7 +13,10 @@ public enum PaymentStatus {
     @Schema(description = "已退回/撤销")
     RETURNED("已退回/撤销"),
     @Schema(description = "已退费/作废")
-    CANCELLED("已退费/作废");
+    CANCELLED("已退费/作废"),
+    // ✅ 新增状态
+    @Schema(description = "已撤销")
+    REVOKED("已撤销"); // 针对项目/处方：医生开了单，患者没交钱，医生自己作废了 -> 不涉及资金
 
     private final String label;
 

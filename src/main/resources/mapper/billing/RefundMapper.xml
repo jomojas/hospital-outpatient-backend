@@ -33,7 +33,7 @@
         AND t.registration_id = mia.registration_id
         AND t.amount = msi.price * mia.unit
         AND t.transaction_type = 'PAY'
-        WHERE mia.status IN ('UNFINISHED','RETURNED')
+        WHERE mia.status IN ('UNFINISHED')
         <if test="keyword != null and keyword != ''">
             AND (p.name LIKE CONCAT('%',#{keyword},'%')
             OR msi.item_name LIKE CONCAT('%',#{keyword},'%'))
@@ -70,7 +70,7 @@
         AND t.registration_id = pr.registration_id
         AND t.amount = d.retail_price * pr.quantity
         AND t.transaction_type = 'PAY'
-        WHERE pr.status IN ('UNFINISHED','RETURNED')
+        WHERE pr.status IN ('UNFINISHED')
         <if test="keyword != null and keyword != ''">
             AND (p.name LIKE CONCAT('%',#{keyword},'%')
             OR d.drug_name LIKE CONCAT('%',#{keyword},'%'))
@@ -114,7 +114,7 @@
         AND t.registration_id = mia.registration_id
         AND t.amount = msi.price * mia.unit
         AND t.transaction_type = 'PAY'
-        WHERE mia.status IN ('UNFINISHED','RETURNED')
+        WHERE mia.status IN ('UNFINISHED')
         <if test="keyword != null and keyword != ''">
             AND (p.name LIKE CONCAT('%',#{keyword},'%')
             OR msi.item_name LIKE CONCAT('%',#{keyword},'%'))
@@ -135,7 +135,7 @@
         AND t.registration_id = pr.registration_id
         AND t.amount = d.retail_price * pr.quantity
         AND t.transaction_type = 'PAY'
-        WHERE pr.status IN ('UNFINISHED','RETURNED')
+        WHERE pr.status IN ('UNFINISHED')
         <if test="keyword != null and keyword != ''">
             AND (p.name LIKE CONCAT('%',#{keyword},'%')
             OR d.drug_name LIKE CONCAT('%',#{keyword},'%'))
@@ -200,9 +200,27 @@
                 AS cnt
     </select>
 
+    <!-- Count UNFINISHED medical item applies -->
+    <select id="countUnfinishedMedicalItems" resultType="int">
+        SELECT COUNT(1)
+        FROM medical_item_apply
+        WHERE registration_id = #{registrationId}
+          AND status = 'UNFINISHED'
+    </select>
+
+    <!-- Count UNFINISHED prescriptions -->
+    <select id="countUnfinishedPrescriptions" resultType="int">
+      SELECT COUNT(1)
+      FROM prescription
+      WHERE registration_id = #{registrationId}
+        AND status = 'UNFINISHED'
+    </select>
+
+    <!-- Update patient_visit status -->
     <update id="updateStatus">
         UPDATE patient_visit
-        SET current_status = #{status}
+        SET current_status = #{status},
+            status_changed_at = NOW()
         WHERE registration_id = #{registrationId}
     </update>
 
@@ -234,5 +252,34 @@
                      #{paymentMethodId}, #{transactionTime}, #{cashierId}, #{remark}, #{settlementTypeId}
                  )
     </insert>
+
+    <!-- Update prescription status only when different to avoid double stock changes -->
+    <update id="updatePrescriptionStatusIfNot">
+        UPDATE prescription
+        SET status = #{status}
+        WHERE prescription_id = #{prescriptionId}
+    </update>
+
+    <select id="selectPrescriptionById" resultType="com.ncst.hospitaloutpatient.model.entity.casefile.Prescription">
+        SELECT
+            prescription_id AS prescriptionId,
+            record_id       AS recordId,
+            registration_id AS registrationId,
+            drug_id         AS drugId,
+            dosage          AS dosage,
+            quantity        AS quantity,
+            prescribe_time  AS prescribeTime,
+            status          AS status,
+            remark          AS remark
+        FROM prescription
+        WHERE prescription_id = #{prescriptionId}
+            LIMIT 1
+    </select>
+
+    <update id="increaseDrugStock">
+        UPDATE drug
+        SET stock_quantity = stock_quantity + #{quantity}
+        WHERE drug_id = #{drugId}
+    </update>
 
 </mapper>

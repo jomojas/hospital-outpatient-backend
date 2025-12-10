@@ -1,6 +1,7 @@
 package com.ncst.hospitaloutpatient.service.casefile;
 
 import com.ncst.hospitaloutpatient.common.enums.VisitStatus;
+import com.ncst.hospitaloutpatient.common.enums.FeeStatus;
 import com.ncst.hospitaloutpatient.model.dto.casefile.*;
 import com.ncst.hospitaloutpatient.common.exception.BusinessException;
 import com.ncst.hospitaloutpatient.mapper.casefile.CaseMapper;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
@@ -128,14 +130,23 @@ public class CaseService {
     }
 
     public void confirmCase(Integer caseId, CaseRequestDTO request) {
-        caseMapper.updateCase(caseId, request);
-        // 更新 patient_visit 状态为 REVISITED
+        // 先查挂号ID
         Integer registrationId = caseMapper.selectRegistrationIdByRecordId(caseId);
-        if (registrationId != null) {
-            int row = caseMapper.updatePatientVisitStatusByRegistrationId(registrationId, "REVISITED");
-            if (row != 1) {
-                throw new BusinessException(500, "更新就诊状态失败");
-            }
+        if (registrationId == null) {
+            throw new BusinessException(404, "未找到对应的挂号记录");
+        }
+
+        // 校验当前就诊状态
+        String currentStatus = caseMapper.selectPatientVisitStatusByRegistrationId(registrationId);
+        if (currentStatus == null || !"WAITING_FOR_REVISIT".equals(currentStatus)) {
+            throw new BusinessException(400, "请先完成所有医疗项目后再进行确诊");
+        }
+
+        // 状态正确才更新病案并置为 REVISITED
+        caseMapper.updateCase(caseId, request);
+        int row = caseMapper.updatePatientVisitStatusByRegistrationId(registrationId, "REVISITED");
+        if (row != 1) {
+            throw new BusinessException(500, "更新就诊状态失败");
         }
     }
 
@@ -166,28 +177,78 @@ public class CaseService {
         }
     }
 
+    public List<CaseItemHistoryDTO> getCaseItemsHistory(Integer recordId) {
+        return caseMapper.selectCaseItemsHistory(recordId);
+    }
+
+    @Transactional
+    public void revokeMedicalItemApply(Integer applyId) {
+        int updated = caseMapper.updateApplyStatusToRevoked(applyId);
+        if (updated == 0) {
+            throw new BusinessException(400, "撤销医疗项目申请失败");
+        }
+
+        // Find registrationId by applyId
+        Integer registrationId = caseMapper.selectRegistrationIdByApplyId(applyId);
+        if (registrationId == null) {
+            throw new BusinessException(404, "未找到对应的挂号记录");
+        }
+
+        // Check if there are still pending/unfinished applies for this registration
+        int remaining = caseMapper.countPendingOrUnfinishedAppliesByRegistrationId(registrationId);
+        if (remaining == 0) {
+            // No remaining applies -> set to WAITING_FOR_REVISIT
+            int row = caseMapper.updatePatientVisitStatusByRegistrationId(registrationId, "WAITING_FOR_REVISIT");
+            if (row != 1) {
+                throw new BusinessException(500, "更新就诊状态失败");
+            }
+        }
+    }
+
     public List<CaseApplyResultDTO> listCaseResults(Integer recordId) {
         // 先查结果
         return caseMapper.selectCaseApplyResults(recordId);
     }
 
-    public void createPrescriptions(Integer recordId, PrescriptionCreateRequest request) {
-        for (PrescriptionCreateRequest.PrescriptionItem item : request.getPrescriptions()) {
+    public List<PrescriptionHistoryDTO> listCasePrescriptions(Integer caseId) {
+        List<PrescriptionHistoryDTO> list = caseMapper.selectPrescriptionsByCaseId(caseId);
+        if (list != null) {
+            for (PrescriptionHistoryDTO dto : list) {
+                dto.setUnit(com.ncst.hospitaloutpatient.common.enums.DrugUnit.toLabel(dto.getUnit()));
+            }
+        }
+        return list;
+    }
+
+    @Transactional
+    public void createPrescriptions(Integer recordId, com.ncst.hospitaloutpatient.model.dto.casefile.PrescriptionCreateRequest request) {
+        for (com.ncst.hospitaloutpatient.model.dto.casefile.PrescriptionCreateRequest.PrescriptionItem item : request.getPrescriptions()) {
+            // 1) Reduce drug stock atomically, ensuring sufficient stock
+            Double qty = item.getQuantity() == null ? 0.0 : item.getQuantity();
+            if (qty <= 0) {
+                throw new BusinessException(400, "处方数量必须大于0");
+            }
+            int stockUpdated = caseMapper.reduceDrugStock(item.getDrugId(), qty);
+            if (stockUpdated != 1) {
+                throw new BusinessException(400, "药品库存不足或药品不存在");
+            }
+
+            // 2) Insert prescription
             Prescription prescription = new Prescription();
             prescription.setRecordId(recordId);
             prescription.setRegistrationId(request.getRegistrationId());
             prescription.setDrugId(item.getDrugId());
             prescription.setDosage(item.getDosage());
-            prescription.setQuantity(item.getQuantity());
+            prescription.setQuantity(qty);
             prescription.setPrescribeTime(LocalDateTime.now());
             prescription.setStatus("PENDING_PAYMENT");
             prescription.setRemark(item.getRemark());
             int result = caseMapper.insertPrescription(prescription);
-            if(result != 1) {
+            if (result != 1) {
                 throw new BusinessException(500, "处方开具失败");
             }
         }
-        // 处方全部开具成功后，更新 patient_visit 状态为 WAITING_FOR_PRESCRIPTION_PAYMENT
+        // 3) Update visit status after all prescriptions created
         Integer registrationId = caseMapper.selectRegistrationIdByRecordId(recordId);
         if (registrationId != null) {
             int row = caseMapper.updatePatientVisitStatusByRegistrationId(registrationId, "WAITING_FOR_PRESCRIPTION_PAYMENT");
@@ -197,27 +258,125 @@ public class CaseService {
         }
     }
 
+    @Transactional
+    public void revokePrescription(Integer prescriptionId) {
+        // 1) Set status to REVOKED only if not already REVOKED
+        int updated = caseMapper.updatePrescriptionStatusToRevoked(prescriptionId);
+        if (updated == 0) {
+            // Not found or already revoked -> no-op
+            return;
+        }
+
+        // 2) Read prescription to restore stock
+        Prescription p = caseMapper.selectPrescriptionById(prescriptionId);
+        if (p == null || p.getDrugId() == null || p.getQuantity() == null) {
+            throw new BusinessException(404, "处方不存在或数据不完整");
+        }
+
+        int inc = caseMapper.increaseDrugStock(p.getDrugId(), p.getQuantity());
+        if (inc != 1) {
+            throw new BusinessException(500, "恢复药品库存失败");
+        }
+    }
+
+    private static FeeStatus mapFeeStatus(String backend) {
+        if (backend == null) return null;
+        return switch (backend) {
+            case "PENDING_PAYMENT" -> FeeStatus.UNPAID;
+            case "UNFINISHED", "FINISHED" -> FeeStatus.PAID;
+            case "CANCELLED", "RETURNED" -> FeeStatus.REFUNDED;
+            case "REVOKED" -> FeeStatus.REVOKED;
+            default -> null;
+        };
+    }
+
+    private static BigDecimal bd(String v) {
+        if (v == null || v.isBlank()) return BigDecimal.ZERO;
+        try {
+            return new BigDecimal(v);
+        } catch (NumberFormatException e) {
+            return BigDecimal.ZERO;
+        }
+    }
+
     public CaseFeeDTO listCaseFees(Integer recordId) {
         Integer registrationId = caseMapper.getRegistrationIdByRecordId(recordId);
 
         CaseFeeDTO dto = new CaseFeeDTO();
-        dto.setRegistrationFee(caseMapper.selectRegistrationFee(registrationId));
-        dto.setMedicalItemFees(caseMapper.selectMedicalItemFees(recordId));
-        dto.setPrescriptionFees(caseMapper.selectPrescriptionFees(recordId));
+        dto.setRegistrationFee(caseMapper.selectRegistrationFee(registrationId).toString());
 
-        BigDecimal total = dto.getRegistrationFee() == null ? BigDecimal.ZERO : dto.getRegistrationFee();
-        if(dto.getMedicalItemFees() != null) {
-            for (ItemFeeDTO fee : dto.getMedicalItemFees()) {
-                total = total.add(fee.getAmount() == null ? BigDecimal.ZERO : fee.getAmount());
+        List<ItemFeeDTO> items = caseMapper.selectMedicalItemFees(recordId);
+        if (items != null) {
+            for (ItemFeeDTO fee : items) {
+                // format amount to 2 decimals (truncate extra digits)
+                String amtStr = fee.getAmount();
+                if (amtStr != null && !amtStr.isBlank()) {
+                    try {
+                        BigDecimal amt = new BigDecimal(amtStr).setScale(2, RoundingMode.DOWN);
+                        fee.setAmount(amt.toPlainString());
+                    } catch (NumberFormatException ignore) {
+                        fee.setAmount("0.00");
+                    }
+                } else {
+                    fee.setAmount("0.00");
+                }
+                // map raw backend status to FeeStatus and set mapped name back
+                FeeStatus mapped = mapFeeStatus(fee.getStatus());
+                fee.setStatus(mapped != null ? mapped.name() : null);
             }
         }
-        if(dto.getPrescriptionFees() != null) {
-            for (DrugFeeDTO fee : dto.getPrescriptionFees()) {
-                total = total.add(fee.getAmount() == null ? BigDecimal.ZERO : fee.getAmount());
+        dto.setMedicalItemFees(items);
+
+        List<DrugFeeDTO> drugs = caseMapper.selectPrescriptionFees(recordId);
+        if (drugs != null) {
+            for (DrugFeeDTO fee : drugs) {
+                // format amount to 2 decimals (truncate extra digits)
+                String amtStr = fee.getAmount();
+                if (amtStr != null && !amtStr.isBlank()) {
+                    try {
+                        BigDecimal amt = new BigDecimal(amtStr).setScale(2, RoundingMode.DOWN);
+                        fee.setAmount(amt.toPlainString());
+                    } catch (NumberFormatException ignore) {
+                        fee.setAmount("0.00");
+                    }
+                } else {
+                    fee.setAmount("0.00");
+                }
+                // map raw backend status to FeeStatus and set mapped name back
+                FeeStatus mapped = mapFeeStatus(fee.getStatus());
+                fee.setStatus(mapped != null ? mapped.name() : null);
             }
         }
-        dto.setTotal(total);
+        dto.setPrescriptionFees(drugs);
 
+        BigDecimal total = bd(dto.getRegistrationFee());
+        BigDecimal unpaid = BigDecimal.ZERO;
+
+        if (items != null) {
+            for (ItemFeeDTO fee : items) {
+                BigDecimal amt = bd(fee.getAmount());
+                total = total.add(amt);
+                try {
+                    if (FeeStatus.valueOf(fee.getStatus()) == FeeStatus.UNPAID) {
+                        unpaid = unpaid.add(amt);
+                    }
+                } catch (Exception ignore) { /* invalid status */ }
+            }
+        }
+        if (drugs != null) {
+            for (DrugFeeDTO fee : drugs) {
+                BigDecimal amt = bd(fee.getAmount());
+                total = total.add(amt);
+                try {
+                    if (FeeStatus.valueOf(fee.getStatus()) == FeeStatus.UNPAID) {
+                        unpaid = unpaid.add(amt);
+                    }
+                } catch (Exception ignore) { /* invalid status */ }
+            }
+        }
+
+        dto.setTotalAmount(total.toPlainString());
+        dto.setUnpaidAmount(unpaid.toPlainString());
         return dto;
     }
 

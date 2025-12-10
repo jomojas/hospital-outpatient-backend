@@ -67,12 +67,41 @@ public class CaseController {
         return ApiResponse.ok();
     }
 
+    @GetMapping("/{caseId}/items")
+    @Operation(summary = "获取病案下的所有已申请项目", description = "返回包括待缴费、未完成、已完成、已撤销的所有记录")
+    public ApiResponse<List<CaseItemHistoryDTO>> getCaseItemsHistory(
+            @Parameter(description = "病案ID(record_id)", example = "12345")
+            @PathVariable("caseId") Integer caseId
+    ) {
+        List<CaseItemHistoryDTO> list = caseService.getCaseItemsHistory(caseId);
+        return ApiResponse.ok(list);
+    }
+
+    @PostMapping("/applies/{applyId}/revoke")
+    @Operation(summary = "撤销待缴费的医疗项目申请", description = "仅限状态为PENDING_PAYMENT的申请，成功后状态变更为REVOKED")
+    public ApiResponse<?> revokeMedicalItemApply(
+            @Parameter(description = "医疗项目申请ID", example = "1001") @PathVariable("applyId") Integer applyId
+    ) {
+        caseService.revokeMedicalItemApply(applyId);
+        return ApiResponse.ok();
+    }
+
     @GetMapping("/{caseId}/results")
     @Operation(summary = "获取病案医疗项目结果", description = "根据病案ID获取其所有医疗项目申请的结果")
     public ApiResponse<List<CaseApplyResultDTO>> listCaseResults(
             @Parameter(description = "病案ID", example = "1") @PathVariable("caseId") Integer caseId) {
         List<CaseApplyResultDTO> results = caseService.listCaseResults(caseId);
         return ApiResponse.ok(results);
+    }
+
+    @GetMapping("/{caseId}/prescriptions")
+    @Operation(summary = "获取病案处方记录", description = "根据病案ID获取该病案下的所有处方记录")
+    public ApiResponse<List<PrescriptionHistoryDTO>> listCasePrescriptions(
+            @Parameter(description = "病案ID(record_id)", example = "12345")
+            @PathVariable("caseId") Integer caseId
+    ) {
+        List<PrescriptionHistoryDTO> list = caseService.listCasePrescriptions(caseId);
+        return ApiResponse.ok(list);
     }
 
     @PostMapping("/{caseId}/prescriptions")
@@ -82,6 +111,16 @@ public class CaseController {
             @RequestBody PrescriptionCreateRequest request
     ) {
         caseService.createPrescriptions(caseId, request);
+        return ApiResponse.ok();
+    }
+
+    @PostMapping("/prescriptions/{prescriptionId}/revoke")
+    @Operation(summary = "撤销处方申请", description = "根据处方ID将状态更新为REVOKED，仅当当前状态为UNFINISHED时生效")
+    public ApiResponse<?> revokePrescription(
+            @Parameter(description = "处方主键ID", example = "1001")
+            @PathVariable("prescriptionId") Integer prescriptionId
+    ) {
+        caseService.revokePrescription(prescriptionId);
         return ApiResponse.ok();
     }
 

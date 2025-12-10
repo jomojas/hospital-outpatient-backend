@@ -25,6 +25,8 @@ public interface CaseMapper {
 
     List<CaseApplyResultDTO> selectCaseApplyResults(@Param("recordId") Integer recordId);
 
+    List<PrescriptionHistoryDTO> selectPrescriptionsByCaseId(@Param("caseId") Integer caseId);
+
     int insertPrescription(Prescription prescription);
 
     Integer getRegistrationIdByRecordId(@Param("recordId") Integer recordId);
@@ -42,13 +44,30 @@ public interface CaseMapper {
 //    int updatePatientVisitStatus(@Param("recordId") Integer recordId,
 //                                 @Param("status") String status);
 
+    List<CaseItemHistoryDTO> selectCaseItemsHistory(@Param("recordId") Integer recordId);
+
+    int updateApplyStatusToRevoked(@Param("applyId") Integer applyId);
+
+    Integer selectRegistrationIdByApplyId(@Param("applyId") Integer applyId);
+
+    int countPendingOrUnfinishedAppliesByRegistrationId(@Param("registrationId") Integer registrationId);
+
+    int updatePatientVisitStatusByRegistrationId(@Param("registrationId") Integer registrationId,
+                                                 @Param("status") String status);
+
+    // Reduce drug stock by quantity, only when stock is sufficient
+    int reduceDrugStock(@Param("drugId") Integer drugId, @Param("quantity") Double quantity);
+
+    int updatePrescriptionStatusToRevoked(@Param("prescriptionId") Integer prescriptionId);
+
+    Prescription selectPrescriptionById(@Param("prescriptionId") Integer prescriptionId);
+
+    int increaseDrugStock(@Param("drugId") Integer drugId, @Param("quantity") Double quantity);
 
     // 新增：查 registration_id
     Integer selectRegistrationIdByRecordId(@Param("recordId") Integer recordId);
 
-    // 新增：根据 registration_id 更新 patient_visit 状态
-    int updatePatientVisitStatusByRegistrationId(@Param("registrationId") Integer registrationId,
-                                                 @Param("status") String status);
+    String selectPatientVisitStatusByRegistrationId(@Param("registrationId") Integer registrationId);
 
     List<DoctorPatientDTO> selectRegisteredPatientsByDoctor(
         @Param("doctorId") Integer doctorId,

@@ -3,6 +3,7 @@ package com.ncst.hospitaloutpatient.mapper.billing;
 import com.ncst.hospitaloutpatient.model.dto.billing.ChargeRefundableItemResponse;
 import com.ncst.hospitaloutpatient.model.dto.billing.ChargeSettleItemDTO;
 import com.ncst.hospitaloutpatient.model.entity.billing.Registration;
+import com.ncst.hospitaloutpatient.model.entity.casefile.Prescription;
 import com.ncst.hospitaloutpatient.model.entity.outpatient.Transaction;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -45,7 +46,21 @@ public interface RefundMapper {
 
     int insertTransaction(Transaction tx);
 
-    void updateStatus(@Param("registrationId") Integer registrationId, @Param("status") String status);
+    int countUnfinishedMedicalItems(@Param("registrationId") Integer registrationId);
+
+    int countUnfinishedPrescriptions(@Param("registrationId") Integer registrationId);
+
+    int updateStatus(@Param("registrationId") Integer registrationId, @Param("status") String status);
 
     Registration selectRegistrationById(@Param("registrationId") Integer registrationId);
+
+    // Update prescription status only if current status is not the target
+    int updatePrescriptionStatusIfNot(@Param("prescriptionId") Integer prescriptionId,
+                                      @Param("status") String status);
+
+    // Read prescription for drugId and quantity
+    Prescription selectPrescriptionById(@Param("prescriptionId") Integer prescriptionId);
+
+    // Increase drug stock by quantity
+    int increaseDrugStock(@Param("drugId") Integer drugId, @Param("quantity") Double quantity);
 }

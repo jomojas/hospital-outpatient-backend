@@ -40,21 +40,21 @@ public class PharmacyController {
         return ApiResponse.ok();
     }
 
-    @Operation(
-            summary = "退药（支持批量）",
-            description = "批量退药，将处方状态置为RETURNED。"
-    )
-    @PostMapping("/return")
-    public ApiResponse<?> returnDrugs(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "批量退药请求体，包含所有要退药的处方ID和患者编号",
-                    required = true
-            )
-            @RequestBody DispenseDrugsRequest request
-    ) {
-        pharmacyService.returnDrugs(request);
-        return ApiResponse.ok();
-    }
+//    @Operation(
+//            summary = "退药（支持批量）",
+//            description = "批量退药，将处方状态置为RETURNED。"
+//    )
+//    @PostMapping("/return")
+//    public ApiResponse<?> returnDrugs(
+//            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+//                    description = "批量退药请求体，包含所有要退药的处方ID和患者编号",
+//                    required = true
+//            )
+//            @RequestBody DispenseDrugsRequest request
+//    ) {
+//        pharmacyService.returnDrugs(request);
+//        return ApiResponse.ok();
+//    }
 
     @Operation(summary = "获取所有药房操作记录")
     @GetMapping("/records")
