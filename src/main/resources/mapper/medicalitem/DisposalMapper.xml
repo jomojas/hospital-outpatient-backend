@@ -5,61 +5,66 @@
 
 <mapper namespace="com.ncst.hospitaloutpatient.mapper.medicalitem.DisposalMapper">
 
+    <select id="getDepartmentIdByStaffId" resultType="int">
+        SELECT department_id
+        FROM staff
+        WHERE staff_id = #{staffId}
+            LIMIT 1
+    </select>
+
     <select id="selectDisposalApplies" resultType="com.ncst.hospitaloutpatient.model.dto.medicalitem.ExamApplyDTO">
-        SELECT
+      SELECT
         mia.apply_id AS applyId,
-        mia.record_id AS recordId,
-        mia.registration_id AS registrationId,
-        mr.patient_no AS patientNo,
+        mr.record_id AS recordId,
+        mr.registration_id AS registrationId,
+        p.patient_no AS patientNo,
         p.name AS patientName,
         p.gender AS gender,
-        mia.item_id AS itemId,
+        msi.item_id AS itemId,
         msi.item_name AS itemName,
         mia.apply_purpose AS applyPurpose,
         mia.apply_site AS applySite,
-        mia.apply_time AS applyTime,
-        mia.status,
-        mia.unit,
-        mia.remark
-        FROM medical_item_apply mia
-        JOIN medical_record mr ON mia.record_id = mr.record_id
-        JOIN patient p ON mr.patient_no = p.patient_no
-        JOIN medical_service_item msi ON mia.item_id = msi.item_id
-        WHERE mia.apply_type = 'DISPOSAL'
+        mia.unit AS unit,
+        mia.remark AS remark,
+        mia.status AS status,
+        DATE_FORMAT(mia.apply_time, '%Y-%m-%d %H:%i:%s') AS applyTime
+      FROM medical_item_apply mia
+      JOIN medical_record mr ON mia.record_id = mr.record_id
+      JOIN patient_visit pv ON mr.registration_id = pv.registration_id
+      JOIN patient p ON pv.patient_id = p.patient_id
+      JOIN medical_service_item msi ON mia.item_id = msi.item_id
+      WHERE msi.department_id = #{departmentId}
+        AND DATE(mia.apply_time) = #{today}
         AND mia.status = 'UNFINISHED'
         <if test="keyword != null and keyword != ''">
-            AND (p.name LIKE CONCAT('%', #{keyword}, '%')
-            OR msi.item_name LIKE CONCAT('%', #{keyword}, '%'))
+          AND (p.name LIKE CONCAT('%', #{keyword}, '%')
+               OR msi.item_name LIKE CONCAT('%', #{keyword}, '%'))
         </if>
-        ORDER BY
+      ORDER BY
         <choose>
-            <when test="sortBy == 'patientName'">
-                p.name
-            </when>
-            <otherwise>
-                mia.apply_time
-            </otherwise>
+          <when test="sortBy == 'patientName'">p.name</when>
+          <otherwise>mia.apply_time</otherwise>
         </choose>
-        <if test="order == 'asc'">
-            ASC
-        </if>
-        <if test="order == 'desc'">
-            DESC
-        </if>
-        LIMIT #{limit} OFFSET #{offset}
+        <choose>
+          <when test="order != null and (order == 'asc' or order == 'ASC')">ASC</when>
+          <otherwise>DESC</otherwise>
+        </choose>
+      LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
     <select id="countDisposalApplies" resultType="long">
-        SELECT COUNT(1)
-        FROM medical_item_apply mia
-        JOIN medical_record mr ON mia.record_id = mr.record_id
-        JOIN patient p ON mr.patient_no = p.patient_no
-        JOIN medical_service_item msi ON mia.item_id = msi.item_id
-        WHERE mia.apply_type = 'DISPOSAL'
+      SELECT COUNT(1)
+      FROM medical_item_apply mia
+      JOIN medical_record mr ON mia.record_id = mr.record_id
+      JOIN patient_visit pv ON mr.registration_id = pv.registration_id
+      JOIN patient p ON pv.patient_id = p.patient_id
+      JOIN medical_service_item msi ON mia.item_id = msi.item_id
+      WHERE msi.department_id = #{departmentId}
+        AND DATE(mia.apply_time) = #{today}
         AND mia.status = 'UNFINISHED'
         <if test="keyword != null and keyword != ''">
-            AND (p.name LIKE CONCAT('%', #{keyword}, '%')
-            OR msi.item_name LIKE CONCAT('%', #{keyword}, '%'))
+          AND (p.name LIKE CONCAT('%', #{keyword}, '%')
+               OR msi.item_name LIKE CONCAT('%', #{keyword}, '%'))
         </if>
     </select>
 
@@ -112,9 +117,18 @@
         SELECT status FROM medical_item_apply WHERE apply_id = #{applyId}
     </select>
 
-    <update id="updateResultAndStatus">
+    <update id="updatePerformer">
         UPDATE medical_item_apply
-        SET result = #{result}, status = 'FINISHED'
+        SET performer_id = #{performerId},
+            perform_time = #{performTime}
+        WHERE apply_id = #{applyId}
+    </update>
+
+    <update id="updateResultStatusAndRecorder">
+        UPDATE medical_item_apply
+        SET result = #{result},
+            status = #{status},
+            result_recorder_id = #{resultRecorderId}
         WHERE apply_id = #{applyId}
     </update>
 
@@ -159,50 +173,30 @@
     </select>
 
     <select id="listOperateLogs" resultType="com.ncst.hospitaloutpatient.model.dto.medicalitem.MedicalItemOperateLogDTO">
-        SELECT
-        log_id AS logId,
-        apply_id AS applyId,
-        operator_id AS operatorId,
-        operate_time AS operateTime,
-        operate_type AS operateType,
-        item_id AS itemId,
-        item_name AS itemName,
-        item_type AS itemType,
-        patient_no AS patientNo,
-        patient_name AS patientName,
-        remark
-        FROM medical_item_operation_log
-        <where>
-            item_type = 'DISPOSAL'
-            <if test="operatorId != null">
-                AND operator_id = #{operatorId}
-            </if>
-            <if test="operateType != null and operateType != ''">
-                AND operate_type = #{operateType}
-            </if>
-            <if test="keyword != null and keyword != ''">
-                AND (patient_name LIKE CONCAT('%', #{keyword}, '%')
-                OR item_name LIKE CONCAT('%', #{keyword}, '%'))
-            </if>
-        </where>
-        ORDER BY
-        <choose>
-            <when test="sortBy == 'patientName'">
-                CONVERT(patient_name USING gbk)
-            </when>
-            <otherwise>
-                operate_time
-            </otherwise>
-        </choose>
-        <choose>
-            <when test="order == 'asc'">
-                ASC
-            </when>
-            <otherwise>
-                DESC
-            </otherwise>
-        </choose>
-        LIMIT #{offset}, #{pageSize}
+      SELECT
+        l.log_id AS logId,
+        l.apply_id AS applyId,
+        l.operator_id AS operatorId,
+        s.name AS operatorName,
+        l.operate_type AS operateType,
+        l.item_id AS itemId,
+        l.item_name AS itemName,
+        l.item_type AS itemType,
+        l.patient_no AS patientNo,
+        l.patient_name AS patientName,
+        l.remark AS remark,
+        l.operate_time AS operateTime
+      FROM medical_item_operation_log l
+      LEFT JOIN staff s ON s.staff_id = l.operator_id
+      WHERE (#{keyword} IS NULL OR l.item_name LIKE CONCAT('%', #{keyword}, '%') OR l.patient_name LIKE CONCAT('%', #{keyword}, '%'))
+        AND (#{operateType} IS NULL OR l.operate_type = #{operateType})
+        AND (#{operatorId} IS NULL OR l.operator_id = #{operatorId})
+      ORDER BY
+        CASE WHEN #{sortBy} = 'operateTime' THEN l.operate_time END,
+        CASE WHEN #{sortBy} = 'itemName' THEN l.item_name END,
+        l.operate_time
+        ${order}
+      LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
     <select id="countOperateLogs" resultType="long">

@@ -71,9 +71,9 @@ public class RefundService {
             if ("ITEM".equals(item.getType())) {
                 flags.hasItemRefund = true;
 
-                if (!"WAITING_FOR_CHECKUP".equals(visitStatus)) {
-                    throw new BusinessException(40001, "当前状态不可退医疗项目！");
-                }
+//                if (!"WAITING_FOR_CHECKUP".equals(visitStatus)) {
+//                    throw new BusinessException(40001, "当前状态不可退医疗项目！");
+//                }
                 if (!refundMapper.hasPayTransactionForMedicalItem(item)) {
                     throw new BusinessException(40001, "未找到缴费记录，不能退费！");
                 }

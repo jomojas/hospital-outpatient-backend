@@ -28,6 +28,9 @@ public class ExamApplyDTO {
     @Schema(description = "医疗项目ID", example = "3")
     private Integer itemId;
 
+    @Schema(description = "医疗项目名称", example = "血常规")
+    private String itemName;
+
     @Schema(description = "申请目的", example = "辅助诊断")
     private String applyPurpose;
 

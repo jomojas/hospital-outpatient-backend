@@ -77,6 +77,14 @@
         LIMIT 1
     </select>
 
+    <update id="updateLastLoginTime">
+        UPDATE staff_account
+        SET
+            last_login = #{newLoginTime}
+        WHERE
+            staff_id = #{staffId}
+    </update>
+
     <select id="getDepartmentNameByDepartmentId" resultType="java.lang.String" parameterType="java.lang.Integer">
         SELECT department_name
         FROM department

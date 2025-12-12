@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 /**
  * 通用医疗项目操作记录DTO（适用于检查/检验/处置）
  */
-
 @Data
 public class MedicalItemOperateLogDTO {
 
@@ -19,6 +18,9 @@ public class MedicalItemOperateLogDTO {
 
     @Schema(description = "操作员工ID")
     private Integer operatorId;
+
+    @Schema(description = "操作员工姓名")
+    private String operatorName;
 
     @Schema(description = "操作时间")
     private Date operateTime;

@@ -312,7 +312,7 @@ public class CaseService {
                 String amtStr = fee.getAmount();
                 if (amtStr != null && !amtStr.isBlank()) {
                     try {
-                        BigDecimal amt = new BigDecimal(amtStr).setScale(2, RoundingMode.DOWN);
+                        java.math.BigDecimal amt = new java.math.BigDecimal(amtStr).setScale(2, java.math.RoundingMode.DOWN);
                         fee.setAmount(amt.toPlainString());
                     } catch (NumberFormatException ignore) {
                         fee.setAmount("0.00");
@@ -334,7 +334,7 @@ public class CaseService {
                 String amtStr = fee.getAmount();
                 if (amtStr != null && !amtStr.isBlank()) {
                     try {
-                        BigDecimal amt = new BigDecimal(amtStr).setScale(2, RoundingMode.DOWN);
+                        java.math.BigDecimal amt = new java.math.BigDecimal(amtStr).setScale(2, java.math.RoundingMode.DOWN);
                         fee.setAmount(amt.toPlainString());
                     } catch (NumberFormatException ignore) {
                         fee.setAmount("0.00");
@@ -349,29 +349,43 @@ public class CaseService {
         }
         dto.setPrescriptionFees(drugs);
 
-        BigDecimal total = bd(dto.getRegistrationFee());
-        BigDecimal unpaid = BigDecimal.ZERO;
+        java.math.BigDecimal total = bd(dto.getRegistrationFee());
+        java.math.BigDecimal unpaid = java.math.BigDecimal.ZERO;
 
         if (items != null) {
             for (ItemFeeDTO fee : items) {
-                BigDecimal amt = bd(fee.getAmount());
-                total = total.add(amt);
+                java.math.BigDecimal amt = bd(fee.getAmount());
                 try {
-                    if (FeeStatus.valueOf(fee.getStatus()) == FeeStatus.UNPAID) {
+                    FeeStatus fs = FeeStatus.valueOf(fee.getStatus());
+                    // exclude REFUNDED and REVOKED from total
+                    if (fs != FeeStatus.REFUNDED && fs != FeeStatus.REVOKED) {
+                        total = total.add(amt);
+                    }
+                    if (fs == FeeStatus.UNPAID) {
                         unpaid = unpaid.add(amt);
                     }
-                } catch (Exception ignore) { /* invalid status */ }
+                } catch (Exception ignore) {
+                    // status unknown -> include in total by default
+                    total = total.add(amt);
+                }
             }
         }
         if (drugs != null) {
             for (DrugFeeDTO fee : drugs) {
-                BigDecimal amt = bd(fee.getAmount());
-                total = total.add(amt);
+                java.math.BigDecimal amt = bd(fee.getAmount());
                 try {
-                    if (FeeStatus.valueOf(fee.getStatus()) == FeeStatus.UNPAID) {
+                    FeeStatus fs = FeeStatus.valueOf(fee.getStatus());
+                    // exclude REFUNDED and REVOKED from total
+                    if (fs != FeeStatus.REFUNDED && fs != FeeStatus.REVOKED) {
+                        total = total.add(amt);
+                    }
+                    if (fs == FeeStatus.UNPAID) {
                         unpaid = unpaid.add(amt);
                     }
-                } catch (Exception ignore) { /* invalid status */ }
+                } catch (Exception ignore) {
+                    // status unknown -> include in total by default
+                    total = total.add(amt);
+                }
             }
         }
 

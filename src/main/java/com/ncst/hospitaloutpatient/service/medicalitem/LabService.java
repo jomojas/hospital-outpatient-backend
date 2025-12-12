@@ -10,6 +10,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -32,19 +34,27 @@ public class LabService {
     }
 
     public List<ExamApplyDTO> listLabApplies(String keyword, Integer page, Integer pageSize, String sortBy, String order) {
+        Integer staffId = getCurrentStaffId();
+        if (staffId == null) throw new BusinessException(401, "未登录");
+        Integer departmentId = labMapper.getDepartmentIdByStaffId(staffId);
+        if (departmentId == null) throw new BusinessException(404, "未找到所属科室");
+
         int offset = (page - 1) * pageSize;
-        // sortBy 校验，只允许 patientName/applyTime，order 只允许 asc/desc，防SQL注入
-        if (!"patientName".equals(sortBy) && !"applyTime".equals(sortBy)) {
-            sortBy = "applyTime";
-        }
-        if (!"asc".equalsIgnoreCase(order)) {
-            order = "desc";
-        }
-        return labMapper.selectLabApplies(keyword, pageSize, offset, sortBy, order);
+        if (!"patientName".equals(sortBy) && !"applyTime".equals(sortBy)) sortBy = "applyTime";
+        if (!"asc".equalsIgnoreCase(order)) order = "desc";
+
+        LocalDate today = LocalDate.now();
+        return labMapper.selectLabApplies(keyword, pageSize, offset, sortBy, order, departmentId, today);
     }
 
     public long countLabApplies(String keyword) {
-        return labMapper.countLabApplies(keyword);
+        Integer staffId = getCurrentStaffId();
+        if (staffId == null) throw new BusinessException(401, "未登录");
+        Integer departmentId = labMapper.getDepartmentIdByStaffId(staffId);
+        if (departmentId == null) throw new BusinessException(404, "未找到所属科室");
+
+        LocalDate today = LocalDate.now();
+        return labMapper.countLabApplies(keyword, departmentId, today);
     }
 
     @Transactional
@@ -70,30 +80,26 @@ public class LabService {
 
     @Transactional
     public void executeLab(Integer applyId) {
-        // 0. 检查申请记录的状态是否为 UNFINISHED
         String applyStatus = labMapper.getApplyStatusById(applyId);
         if (!"UNFINISHED".equals(applyStatus)) {
             throw new BusinessException(40002, "该申请记录当前状态不可执行");
         }
-        // 1. 获取registrationId
+
         Integer registrationId = labMapper.getRegistrationIdByApplyId(applyId);
         if (registrationId == null) throw new BusinessException(40001, "申请不存在");
 
-        // 2. 判断patient_visit.current_status，如果不是CHECKING则改为CHECKING
         String status = labMapper.getCurrentStatus(registrationId);
         if (!"CHECKING".equals(status)) {
-            int result = labMapper.updateCurrentStatus(registrationId, "CHECKING");
-            if(result == 0) {
-                throw new BusinessException(500, "更新就诊状态失败");
-            }
+            int updStatus = labMapper.updateCurrentStatus(registrationId, "CHECKING");
+            if (updStatus == 0) throw new BusinessException(500, "更新就诊状态失败");
         }
 
-        // 3. 查询申请的详细信息填充日志
         ItemApplyInfoForLog applyInfo = labMapper.getApplyInfoForLog(applyId);
 
-        // 4. 插入操作日志
-        MedicalItemOperationLog log = new MedicalItemOperationLog();
         Integer operatorId = getCurrentStaffId();
+        if (operatorId == null) throw new BusinessException(401, "未登录");
+
+        MedicalItemOperationLog log = new MedicalItemOperationLog();
         log.setApplyId(applyId);
         log.setOperatorId(operatorId);
         log.setOperateType("EXECUTE");
@@ -102,34 +108,38 @@ public class LabService {
         log.setItemType(applyInfo.getItemType());
         log.setPatientNo(applyInfo.getPatientNo());
         log.setPatientName(applyInfo.getPatientName());
-        log.setRemark("执行检查项目");
+        log.setRemark("执行检验项目");
 
-        int result = labMapper.insert(log);
-        if(result == 0) {
-            throw new BusinessException(500, "插入操作日志失败");
-        }
+        int insertLog = labMapper.insert(log);
+        if (insertLog == 0) throw new BusinessException(500, "插入操作日志失败");
+
+        int updPerformer = labMapper.updatePerformer(applyId, operatorId, LocalDateTime.now());
+        if (updPerformer == 0) throw new BusinessException(500, "更新执行人失败");
     }
 
     @Transactional
     public void submitLabResult(Integer applyId, ItemApplyResultDTO resultDTO) {
-        // 1. 校验申请状态
         String applyStatus = labMapper.getApplyStatusById(applyId);
         if (!"UNFINISHED".equals(applyStatus)) {
             throw new BusinessException(400, "该申请非未完成状态，不能提交结果");
         }
-        // 2. 更新 medical_item_apply 的 result 和 status
-        int update = labMapper.updateResultAndStatus(applyId, resultDTO.getResult());
-        if (update == 0) {
-            throw new BusinessException(500, "结果更新失败");
-        }
 
-        // 3. 查询用于日志的明细
+        Integer recorderId = getCurrentStaffId();
+        if (recorderId == null) throw new BusinessException(401, "未登录");
+
+        int update = labMapper.updateResultStatusAndRecorder(
+                applyId,
+                resultDTO.getResult(),
+                "FINISHED",
+                recorderId
+        );
+        if (update == 0) throw new BusinessException(500, "结果更新失败");
+
         ItemApplyInfoForLog applyInfo = labMapper.getApplyInfoForLog(applyId);
 
-        // 4. 写入操作日志
         MedicalItemOperationLog log = new MedicalItemOperationLog();
         log.setApplyId(applyId);
-        log.setOperatorId(getCurrentStaffId());
+        log.setOperatorId(recorderId);
         log.setOperateType("INPUT_RESULT");
         log.setItemId(applyInfo.getItemId());
         log.setItemName(applyInfo.getItemName());
@@ -137,20 +147,15 @@ public class LabService {
         log.setPatientNo(applyInfo.getPatientNo());
         log.setPatientName(applyInfo.getPatientName());
         log.setRemark(resultDTO.getRemark() != null ? resultDTO.getRemark() : "录入检验结果");
-        int resultA = labMapper.insertOperationLog(log);
-        if (resultA == 0) {
-            throw new BusinessException(500, "操作日志插入失败");
-        }
 
-        // 5. 检查该 registration 下所有项目是否全部 FINISHED
+        int resultA = labMapper.insertOperationLog(log);
+        if (resultA == 0) throw new BusinessException(500, "操作日志插入失败");
+
         Integer registrationId = labMapper.getRegistrationIdByApplyId(applyId);
         int unfinishedCount = labMapper.countUnfinishedApplies(registrationId);
         if (unfinishedCount == 0) {
-            // 6. 全部完成，更新 patient_visit.current_status
             int resultB = labMapper.updatePatientVisitStatus(registrationId, "WAITING_FOR_REVISIT");
-            if(resultB == 0) {
-                throw new BusinessException(500, "更新就诊状态失败");
-            }
+            if (resultB == 0) throw new BusinessException(500, "更新就诊状态失败");
         }
     }
 

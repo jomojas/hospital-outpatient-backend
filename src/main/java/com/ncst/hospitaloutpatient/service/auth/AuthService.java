@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
+
 @Service
 public class AuthService {
 
@@ -20,39 +22,59 @@ public class AuthService {
     private PasswordEncoder passwordEncoder;
 
     public UserDto login(String username, String password) {
+        // 1. 账号密码验证
         StaffAccountEntity userAccount = authMapper.selectStaffAccountByUsername(username);
         if (userAccount == null || !passwordEncoder.matches(password, userAccount.getPassword())) {
             throw new BusinessException(40103, "账号不存在或密码错误");
         }
 
-        // 1. 获取staff_id
+        // 2. 获取 staff_id
         long staffId = userAccount.getStaffId();
 
-        // 2. 查staff表
+        // 3. 查 staff 表 (获取员工基本信息、roleId 和 departmentId)
         StaffEntity staff = authMapper.selectStaffByStaffId(staffId);
         if (staff == null) {
             throw new BusinessException(40401, "员工信息不存在");
         }
         long roleId = staff.getRoleId();
 
-        // 3. 查staff_role表
+        // 4. 查 staff_role 表 (获取角色名称)
         StaffRoleEntity role = authMapper.selectStaffRoleByStaffId(roleId);
         if (role == null) {
             throw new BusinessException(40401, "角色不存在");
         }
         String roleName = role.getRoleName();
 
-        // 4. 获取科室类型
+        // 5. 获取科室类型和科室名称
         String departmentType = authMapper.selectTypeByDepartmentId(staff.getDepartmentId());
-
-        // 5. 获取上次登录时间
-        String lastLoginTime = authMapper.getLastLoginTime(staffId);
-
-        // 6. 获取科室名称
         String departmentName = authMapper.getDepartmentNameByDepartmentId(staff.getDepartmentId());
 
-        // 4. 组装UserDto
-        return new UserDto(staffId, userAccount.getAccountName(), roleName, departmentType, staff.getName(), lastLoginTime, departmentName);
+        // --- 【关键修改部分】 ---
+
+        // 6. 获取上次登录时间 (DB中的 last_login 字段)
+        String lastLoginTime = authMapper.getLastLoginTime(staffId);
+
+        // 7. 处理 lastLoginTime 的返回逻辑：
+        String returnLastLoginTime = lastLoginTime;
+        if (lastLoginTime == null || lastLoginTime.isEmpty()) {
+            // 如果是首次登录，返回一个默认值给前端
+            returnLastLoginTime = "N/A";
+        }
+
+        // 8. 更新数据库中的 last_login 字段为当前时间
+        // 假设您在 authMapper 中新增了一个方法来更新 staff_account 表的 last_login 字段
+        authMapper.updateLastLoginTime(staffId, new Date()); // 传入当前时间，或使用 MyBatis 接收 NOW()
+
+        // 9. 组装 UserDto
+        return new UserDto(
+                staffId,
+                userAccount.getAccountName(),
+                roleName,
+                departmentType,
+                staff.getName(),
+                returnLastLoginTime, // 使用经过处理的值
+                departmentName
+        );
     }
 
     public void changePassword(String staffId, String oldPassword, String newPassword) {

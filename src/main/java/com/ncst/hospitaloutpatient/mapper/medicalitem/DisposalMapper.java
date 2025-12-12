@@ -5,18 +5,25 @@ import com.ncst.hospitaloutpatient.model.entity.medicalItem.MedicalItemOperation
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
 public interface DisposalMapper {
+    Integer getDepartmentIdByStaffId(@Param("staffId") Integer staffId);
+
     List<ExamApplyDTO> selectDisposalApplies(@Param("keyword") String keyword,
-                                        @Param("limit") Integer limit,
-                                        @Param("offset") Integer offset,
-                                        @Param("sortBy") String sortBy,
-                                        @Param("order") String order);
+                                             @Param("pageSize") Integer pageSize,
+                                             @Param("offset") Integer offset,
+                                             @Param("sortBy") String sortBy,
+                                             @Param("order") String order,
+                                             @Param("departmentId") Integer departmentId,
+                                             @Param("today") LocalDate today);
 
-    long countDisposalApplies(@Param("keyword") String keyword);
-
+    long countDisposalApplies(@Param("keyword") String keyword,
+                              @Param("departmentId") Integer departmentId,
+                              @Param("today") LocalDate today);
     /**
      * 根据applyId查registrationId
      */
@@ -37,7 +44,14 @@ public interface DisposalMapper {
 
     String getApplyStatusById(@Param("applyId") Integer applyId);
 
-    int updateResultAndStatus(@Param("applyId") Integer applyId, @Param("result") String result);
+    int updatePerformer(@Param("applyId") Integer applyId,
+                        @Param("performerId") Integer performerId,
+                        @Param("performTime") LocalDateTime performTime);
+
+    int updateResultStatusAndRecorder(@Param("applyId") Integer applyId,
+                                      @Param("result") String result,
+                                      @Param("status") String status,
+                                      @Param("resultRecorderId") Integer resultRecorderId);
 
     int insertOperationLog(MedicalItemOperationLog log);
 

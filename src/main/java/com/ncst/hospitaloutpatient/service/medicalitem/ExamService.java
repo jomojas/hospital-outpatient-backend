@@ -10,6 +10,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -32,19 +34,27 @@ public class ExamService {
     }
 
     public List<ExamApplyDTO> listExamApplies(String keyword, Integer page, Integer pageSize, String sortBy, String order) {
+        Integer staffId = getCurrentStaffId();
+        if (staffId == null) throw new BusinessException(401, "Unauthorized");
+        Integer departmentId = examMapper.getDepartmentIdByStaffId(staffId);
+        if (departmentId == null) throw new BusinessException(404, "Department not found");
+
         int offset = (page - 1) * pageSize;
-        // sortBy 校验，只允许 patientName/applyTime，order 只允许 asc/desc，防SQL注入
-        if (!"patientName".equals(sortBy) && !"applyTime".equals(sortBy)) {
-            sortBy = "applyTime";
-        }
-        if (!"asc".equalsIgnoreCase(order)) {
-            order = "desc";
-        }
-        return examMapper.selectExamApplies(keyword, pageSize, offset, sortBy, order);
+        if (!"patientName".equals(sortBy) && !"applyTime".equals(sortBy)) sortBy = "applyTime";
+        if (!"asc".equalsIgnoreCase(order)) order = "desc";
+
+        LocalDate today = LocalDate.now();
+        return examMapper.selectExamApplies(keyword, pageSize, offset, sortBy, order, departmentId, today);
     }
 
     public long countExamApplies(String keyword) {
-        return examMapper.countExamApplies(keyword);
+        Integer staffId = getCurrentStaffId();
+        if (staffId == null) throw new BusinessException(401, "Unauthorized");
+        Integer departmentId = examMapper.getDepartmentIdByStaffId(staffId);
+        if (departmentId == null) throw new BusinessException(404, "Department not found");
+
+        LocalDate today = LocalDate.now();
+        return examMapper.countExamApplies(keyword, departmentId, today);
     }
 
     @Transactional
@@ -70,7 +80,7 @@ public class ExamService {
 
     @Transactional
     public void executeExam(Integer applyId) {
-        // 0. 检查申请记录的状态是否为 UNFINISHED
+        // 0. 校验申请记录的状态是否为 UNFINISHED
         String applyStatus = examMapper.getApplyStatusById(applyId);
         if (!"UNFINISHED".equals(applyStatus)) {
             throw new BusinessException(40002, "该申请记录当前状态不可执行");
@@ -104,9 +114,15 @@ public class ExamService {
         log.setPatientName(applyInfo.getPatientName());
         log.setRemark("执行检查项目");
 
-        int result = examMapper.insert(log);
-        if(result == 0) {
+        int insertLog = examMapper.insert(log);
+        if(insertLog == 0) {
             throw new BusinessException(500, "插入操作日志失败");
+        }
+
+        // 5. 更新执行人和执行时间
+        int updPerformer = examMapper.updatePerformer(applyId, operatorId, LocalDateTime.now());
+        if (updPerformer == 0) {
+            throw new BusinessException(500, "更新执行人失败");
         }
     }
 
@@ -117,8 +133,14 @@ public class ExamService {
         if (!"UNFINISHED".equals(applyStatus)) {
             throw new BusinessException(400, "该申请非未完成状态，不能提交结果");
         }
-        // 2. 更新 medical_item_apply 的 result 和 status
-        int update = examMapper.updateResultAndStatus(applyId, resultDTO.getResult());
+        // 2. 更新 medical_item_apply 的 result、status、result_record_id
+        Integer recorderId = getCurrentStaffId();
+        int update = examMapper.updateResultStatusAndRecorder(
+                applyId,
+                resultDTO.getResult(),
+                "FINISHED",
+                recorderId
+        );
         if (update == 0) {
             throw new BusinessException(500, "结果更新失败");
         }
@@ -129,7 +151,7 @@ public class ExamService {
         // 4. 写入操作日志
         MedicalItemOperationLog log = new MedicalItemOperationLog();
         log.setApplyId(applyId);
-        log.setOperatorId(getCurrentStaffId());
+        log.setOperatorId(recorderId);
         log.setOperateType("INPUT_RESULT");
         log.setItemId(applyInfo.getItemId());
         log.setItemName(applyInfo.getItemName());
