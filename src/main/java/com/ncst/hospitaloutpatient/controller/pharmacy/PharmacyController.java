@@ -22,10 +22,10 @@ public class PharmacyController {
     @GetMapping("/dispense/pending")
     public ApiResponse<?> listDispensePending(
             @Parameter(description = "关键字（患者姓名/药品名）") @RequestParam(required = false) String keyword,
-            @Parameter(description = "排序字段", example = "patientName, prescribeTime") @RequestParam(defaultValue = "prescribeTime") String sortBy,
+            @Parameter(description = "排序字段", example = "prescribeTime") @RequestParam(defaultValue = "prescribeTime") String sortBy,
             @Parameter(description = "排序顺序", example = "desc, asc") @RequestParam(defaultValue = "desc") String order,
             @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") int page,
-            @Parameter(description = "每页大小", example = "10") @RequestParam(defaultValue = "10") int pageSize) {
+            @Parameter(description = "每页大小", example = "10") @RequestParam(defaultValue = "50") int pageSize) {
 
         List<DispensePendingDTO> list = pharmacyService.listDispensePending(keyword, sortBy, order, page, pageSize);
         long total = pharmacyService.countDispensePending(keyword);

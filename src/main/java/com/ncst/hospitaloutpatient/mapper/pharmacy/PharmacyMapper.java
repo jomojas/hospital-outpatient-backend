@@ -45,14 +45,12 @@ public interface PharmacyMapper {
     // 回补药品库存
     int increaseDrugStock(@Param("drugId") Integer drugId, @Param("quantity") BigDecimal quantity);
 
-    List<PharmacyRecordDTO> listPharmacyRecords(
-            @Param("keyword") String keyword,
-            @Param("type") String type,
-            @Param("sortBy") String sortBy,
-            @Param("order") String order,
-            @Param("offset") int offset,
-            @Param("limit") int limit
-    );
+    List<PharmacyRecordDTO> listPharmacyRecords(@Param("keyword") String keyword,
+                                                @Param("type") String type,
+                                                @Param("sortBy") String sortBy,
+                                                @Param("order") String order,
+                                                @Param("offset") int offset,
+                                                @Param("pageSize") int pageSize);
 
     long countPharmacyRecords(
             @Param("keyword") String keyword,

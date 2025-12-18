@@ -12,10 +12,13 @@ public class PharmacyRecordDTO {
     private String patientName;
     private Integer drugId;
     private String drugName;
+    private String specification;
+    private String unit;
     private BigDecimal quantity;
     private BigDecimal amount;
     private String operateType;
     private Integer operatorId;
+    private String operatorName;
     private Date operateTime;
     private String remark;
 }

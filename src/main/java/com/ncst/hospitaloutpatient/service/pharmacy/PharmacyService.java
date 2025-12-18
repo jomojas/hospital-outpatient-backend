@@ -1,5 +1,6 @@
 package com.ncst.hospitaloutpatient.service.pharmacy;
 
+import com.ncst.hospitaloutpatient.common.enums.DrugUnit;
 import com.ncst.hospitaloutpatient.common.exception.BusinessException;
 import com.ncst.hospitaloutpatient.mapper.pharmacy.PharmacyMapper;
 import com.ncst.hospitaloutpatient.model.dto.pharmacy.*;
@@ -36,7 +37,13 @@ public class PharmacyService {
 
     public List<DispensePendingDTO> listDispensePending(String keyword, String sortBy, String order, int page, int pageSize) {
         int offset = (page - 1) * pageSize;
-        return pharmacyMapper.listDispensePending(keyword, sortBy, order, offset, pageSize);
+        List<DispensePendingDTO> list = pharmacyMapper.listDispensePending(keyword, sortBy, order, offset, pageSize);
+        if (list != null) {
+            for (DispensePendingDTO dto : list) {
+                dto.setUnit(DrugUnit.toLabel(dto.getUnit()));
+            }
+        }
+        return list;
     }
 
     public long countDispensePending(String keyword) {
@@ -91,7 +98,7 @@ public class PharmacyService {
         for (Integer registrationId : registrationIds) {
             int unfinished = pharmacyMapper.countUnfinishedPrescriptions(registrationId);
             if (unfinished == 0) {
-                int result = pharmacyMapper.updatePatientVisitStatusByRegistrationId(registrationId, "MEDICINE_TAKEN");
+                int result = pharmacyMapper.updatePatientVisitStatusByRegistrationId(registrationId, "FINISHED");
                 if(result == 0) {
                     throw new BusinessException(500, "更新患者就诊状态失败：" + registrationId);
                 }
@@ -150,11 +157,21 @@ public class PharmacyService {
         }
     }
 
-    public List<PharmacyRecordDTO> listPharmacyRecords(String keyword, String type,
-                                                       String sortBy, String order,
-                                                       int page, int pageSize) {
-        int offset = (page - 1) * pageSize;
-        return pharmacyMapper.listPharmacyRecords(keyword, type, sortBy, order, offset, pageSize);
+    public List<PharmacyRecordDTO> listPharmacyRecords(String keyword,
+                                                       String type,
+                                                       String sortBy,
+                                                       String order,
+                                                       int page,
+                                                       int pageSize) {
+        int offset = Math.max(page - 1, 0) * pageSize;
+        List<PharmacyRecordDTO> list = pharmacyMapper.listPharmacyRecords(
+                keyword, type, sortBy, order, offset, pageSize);
+        if (list != null) {
+            for (PharmacyRecordDTO dto : list) {
+                dto.setUnit(DrugUnit.toLabel(dto.getUnit()));
+            }
+        }
+        return list;
     }
 
     public long countPharmacyRecords(String keyword, String type) {

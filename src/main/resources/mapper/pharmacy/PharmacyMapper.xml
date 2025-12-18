@@ -7,17 +7,20 @@
 
     <select id="listDispensePending" resultType="com.ncst.hospitaloutpatient.model.dto.pharmacy.DispensePendingDTO">
         SELECT
-        p.prescription_id AS prescriptionId,
-        pa.name AS patientName,
-        pa.gender,
-        pa.patient_no AS patientNo,
-        p.drug_id,
-        d.drug_name AS drugName,
-        c.category_name AS drugCategory,
-        p.dosage,
-        p.quantity,
-        p.prescribe_time,
-        p.remark
+            p.prescription_id AS prescriptionId,
+            r.registration_id AS registrationId,
+            pa.name AS patientName,
+            pa.gender,
+            pa.patient_no AS patientNo,
+            p.drug_id AS drugId,
+            d.drug_name AS drugName,
+            c.category_name AS drugCategory,
+            d.specification AS specification,
+            d.unit AS unit,
+            p.dosage AS dosage,
+            p.quantity AS quantity,
+            p.prescribe_time AS prescribeTime,
+            p.remark AS remark
         FROM prescription p
         JOIN registration r ON p.registration_id = r.registration_id
         JOIN patient pa ON r.patient_id = pa.patient_id
@@ -26,26 +29,11 @@
         WHERE p.status = 'UNFINISHED'
         <if test="keyword != null and keyword != ''">
             AND (
-            pa.name LIKE CONCAT('%', #{keyword}, '%')
-            OR d.drug_name LIKE CONCAT('%', #{keyword}, '%')
+                pa.name LIKE CONCAT('%', #{keyword}, '%')
+                OR d.drug_name LIKE CONCAT('%', #{keyword}, '%')
             )
         </if>
-        <choose>
-            <when test="sortBy == 'patientName'">
-                ORDER BY CONVERT(pa.name USING gbk)
-            </when>
-            <otherwise>
-                ORDER BY p.prescribe_time
-            </otherwise>
-        </choose>
-        <choose>
-            <when test="order == 'asc'">
-                ASC
-            </when>
-            <otherwise>
-                DESC
-            </otherwise>
-        </choose>
+        ORDER BY r.registration_id DESC, p.prescribe_time DESC
         LIMIT #{offset}, #{pageSize}
     </select>
 
@@ -144,62 +132,78 @@
         WHERE drug_id = #{drugId}
     </update>
 
-    <!-- 查询药房操作记录 -->
     <select id="listPharmacyRecords" resultType="com.ncst.hospitaloutpatient.model.dto.pharmacy.PharmacyRecordDTO">
         SELECT
-        record_id,
-        prescription_id,
-        patient_no,
-        patient_name,
-        drug_id,
-        drug_name,
-        quantity,
-        amount,
-        operate_type,
-        operator_id,
-        operate_time,
-        remark
-        FROM pharmacy_record
+            pr.record_id AS recordId,
+            pr.prescription_id AS prescriptionId,
+            pa.patient_no AS patientNo,
+            pa.name AS patientName,
+            pr.drug_id AS drugId,
+            d.drug_name AS drugName,
+            d.specification AS specification,
+            d.unit AS unit,
+            pr.quantity AS quantity,
+            pr.amount AS amount,
+            pr.operate_type AS operateType,
+            pr.operator_id AS operatorId,
+            s.name AS operatorName,
+            pr.operate_time AS operateTime,
+            pr.remark AS remark
+        FROM pharmacy_record pr
+        JOIN prescription p ON pr.prescription_id = p.prescription_id
+        JOIN registration r ON p.registration_id = r.registration_id
+        JOIN patient pa ON r.patient_id = pa.patient_id
+        JOIN drug d ON pr.drug_id = d.drug_id
+        LEFT JOIN staff s ON pr.operator_id = s.staff_id
         <where>
-            <if test="keyword != null and keyword != ''">
-                AND (patient_name LIKE CONCAT('%', #{keyword}, '%')
-                OR drug_name LIKE CONCAT('%', #{keyword}, '%'))
-            </if>
             <if test="type != null and type != ''">
-                AND operate_type = #{type}
+                AND pr.operate_type = #{type}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (pa.name LIKE CONCAT('%', #{keyword}, '%')
+                     OR d.drug_name LIKE CONCAT('%', #{keyword}, '%'))
             </if>
         </where>
         <choose>
             <when test="sortBy == 'patientName'">
-                ORDER BY CONVERT(patient_name USING gbk)
+                ORDER BY CONVERT(pa.name USING gbk)
             </when>
             <when test="sortBy == 'amount'">
-                ORDER BY amount
+                ORDER BY pr.amount
+            </when>
+            <when test="sortBy == 'operate_time' or sortBy == 'operateTime'">
+                ORDER BY pr.operate_time
             </when>
             <otherwise>
-                ORDER BY operate_time
+                ORDER BY pr.operate_time
             </otherwise>
         </choose>
-        <if test="order == 'asc'">
-            ASC
-        </if>
-        <if test="order == null or order == '' or order == 'desc'">
-            DESC
-        </if>
-        LIMIT #{offset}, #{limit}
+        <choose>
+            <when test="order == 'asc' or order == 'ASC'">
+                ASC
+            </when>
+            <otherwise>
+                DESC
+            </otherwise>
+        </choose>
+        LIMIT #{offset}, #{pageSize}
     </select>
 
     <!-- 统计总数 -->
     <select id="countPharmacyRecords" resultType="long">
         SELECT COUNT(1)
-        FROM pharmacy_record
+        FROM pharmacy_record pr
+        JOIN prescription p ON pr.prescription_id = p.prescription_id
+        JOIN registration r ON p.registration_id = r.registration_id
+        JOIN patient pa ON r.patient_id = pa.patient_id
+        JOIN drug d ON pr.drug_id = d.drug_id
         <where>
-            <if test="keyword != null and keyword != ''">
-                AND (patient_name LIKE CONCAT('%', #{keyword}, '%')
-                OR drug_name LIKE CONCAT('%', #{keyword}, '%'))
-            </if>
             <if test="type != null and type != ''">
-                AND operate_type = #{type}
+                AND pr.operate_type = #{type}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (pa.name LIKE CONCAT('%', #{keyword}, '%')
+                     OR d.drug_name LIKE CONCAT('%', #{keyword}, '%'))
             </if>
         </where>
     </select>

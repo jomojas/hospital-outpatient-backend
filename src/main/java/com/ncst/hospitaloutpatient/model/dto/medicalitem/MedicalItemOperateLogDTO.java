@@ -1,7 +1,7 @@
 package com.ncst.hospitaloutpatient.model.dto.medicalitem;
 
 import lombok.Data;
-import java.util.Date;
+//import java.util.Date;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
@@ -23,7 +23,7 @@ public class MedicalItemOperateLogDTO {
     private String operatorName;
 
     @Schema(description = "操作时间")
-    private Date operateTime;
+    private String operateTime;
 
     @Schema(description = "操作类型(EXECUTE/INPUT_RESULT)")
     private String operateType;
