@@ -23,9 +23,6 @@ public class UpdateDrugRequest {
     @Schema(description = "保质期", example = "24个月")
     private String shelfLife;
 
-    @Schema(description = "库存数量", example = "100.0")
-    private BigDecimal stockQuantity;
-
     @Schema(description = "规格", example = "0.25g*24粒")
     private String specification;
 
@@ -37,4 +34,7 @@ public class UpdateDrugRequest {
 
     @Schema(description = "药品描述", example = "抗生素")
     private String description;
+
+    @Schema(description = "生产厂家", example = "某某制药有限公司")
+    private String manufacturer;
 }

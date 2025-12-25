@@ -1,10 +1,10 @@
 package com.ncst.hospitaloutpatient.mapper.hr;
 
 import com.ncst.hospitaloutpatient.model.dto.hr.StaffDetailResponse;
+import com.ncst.hospitaloutpatient.model.dto.hr.StaffRoleResponse;
 import com.ncst.hospitaloutpatient.model.entity.auth.StaffEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -62,9 +62,18 @@ public interface EmployeeMapper {
     // 查询部门类型
     String getDepartmentType(@Param("departmentId") Integer departmentId);
 
-    // 获取科室前缀
-    String getDepartmentPrefix(@Param("departmentId") Integer departmentId);
+    // 根据 roleId 获取角色名
+    String getRoleNameById(@Param("roleId") Integer roleId);
 
-    // 获取某科室当前年份的最大自增号码
-    Integer getMaxSerialNumber(@Param("prefix") String prefix, @Param("year") String year);
+    // 获取某前缀账号的最大后三位数字（如 DOC009 -> 9）
+    Integer getMaxAccountSeqByPrefix(@Param("prefix") String prefix);
+
+    /** 检查 staff 是否存在 */
+    boolean existsStaffById(@Param("staffId") Integer staffId);
+
+    /** 按 staffId 更新登录密码（存加密后的密码） */
+    int updatePasswordByStaffId(@Param("staffId") Integer staffId, @Param("password") String password);
+
+    /** 查询所有角色 */
+    List<StaffRoleResponse> selectAllRoles();
 }

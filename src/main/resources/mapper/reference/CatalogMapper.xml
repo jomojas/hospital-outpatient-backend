@@ -15,20 +15,20 @@
         description
         FROM medical_service_item
         WHERE item_type = 'EXAM'
-        AND status = 'ENABLED'
+        AND status = 1
         <if test="keyword != null and keyword != ''">
             AND (item_name LIKE CONCAT('%', #{keyword}, '%')
             OR item_code LIKE CONCAT('%', #{keyword}, '%'))
         </if>
         ORDER BY item_id
-        LIMIT #{size} OFFSET #{offset}
+        LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
     <select id="countExamItems" resultType="int">
         SELECT COUNT(*)
         FROM medical_service_item
         WHERE item_type = 'EXAM'
-        AND status = 'ENABLED'
+        AND status = 1
         <if test="keyword != null and keyword != ''">
             AND (item_name LIKE CONCAT('%', #{keyword}, '%')
             OR item_code LIKE CONCAT('%', #{keyword}, '%'))
@@ -45,20 +45,20 @@
         description
         FROM medical_service_item
         WHERE item_type = 'LAB'
-        AND status = 'ENABLED'
+        AND status = 1
         <if test="keyword != null and keyword != ''">
             AND (item_name LIKE CONCAT('%', #{keyword}, '%')
             OR item_code LIKE CONCAT('%', #{keyword}, '%'))
         </if>
         ORDER BY item_id
-        LIMIT #{size} OFFSET #{offset}
+        LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
     <select id="countLabItems" resultType="int">
         SELECT COUNT(*)
         FROM medical_service_item
         WHERE item_type = 'LAB'
-        AND status = 'ENABLED'
+        AND status = 1
         <if test="keyword != null and keyword != ''">
             AND (item_name LIKE CONCAT('%', #{keyword}, '%')
             OR item_code LIKE CONCAT('%', #{keyword}, '%'))
@@ -75,20 +75,20 @@
         description
         FROM medical_service_item
         WHERE item_type = 'DISPOSAL'
-        AND status = 'ENABLED'
+        AND status = 1
         <if test="keyword != null and keyword != ''">
             AND (item_name LIKE CONCAT('%', #{keyword}, '%')
             OR item_code LIKE CONCAT('%', #{keyword}, '%'))
         </if>
         ORDER BY item_id
-        LIMIT #{size} OFFSET #{offset}
+        LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
     <select id="countDisposalItems" resultType="int">
         SELECT COUNT(*)
         FROM medical_service_item
         WHERE item_type = 'DISPOSAL'
-        AND status = 'ENABLED'
+        AND status = 1
         <if test="keyword != null and keyword != ''">
             AND (item_name LIKE CONCAT('%', #{keyword}, '%')
             OR item_code LIKE CONCAT('%', #{keyword}, '%'))
@@ -109,7 +109,8 @@
         d.specification AS specification,
         d.unit AS unit,
         d.retail_price AS retailPrice,
-        d.description AS description
+        d.description AS description,
+        d.manufacturer AS manufacturer
         FROM drug d
         LEFT JOIN drug_category c ON d.category_id = c.category_id
         <where>
@@ -122,7 +123,7 @@
             </if>
         </where>
         ORDER BY d.drug_code
-        LIMIT #{size} OFFSET #{offset}
+        LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
     <select id="countDrugCatalog" resultType="int">

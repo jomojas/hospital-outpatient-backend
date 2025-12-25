@@ -3,6 +3,7 @@ package com.ncst.hospitaloutpatient.controller.hr;
 import com.ncst.hospitaloutpatient.common.response.ApiResponse;
 import com.ncst.hospitaloutpatient.model.dto.hr.CreateEmployeeRequest;
 import com.ncst.hospitaloutpatient.model.dto.hr.StaffDetailResponse;
+import com.ncst.hospitaloutpatient.model.dto.hr.StaffRoleResponse;
 import com.ncst.hospitaloutpatient.model.dto.hr.UpdateEmployeeDTO;
 import com.ncst.hospitaloutpatient.service.hr.EmployeeService;
 import jakarta.validation.Valid;
@@ -60,14 +61,14 @@ public class EmployeeController {
 
     @Operation(
         summary = "获取账号名",
-        description = "根据部门ID自动生成账号名"
+        description = "根据角色ID自动生成账号名"
     )
     @GetMapping("/accountName")
     public ApiResponse<String> getAccountName(
-        @Parameter(description = "部门ID", required = true, example = "1")
-        @RequestParam Integer departmentId
+        @Parameter(description = "角色ID", required = true, example = "1")
+        @RequestParam Integer roleId
     ) {
-        String accountName = employeeService.getAccountName(departmentId);
+        String accountName = employeeService.getAccountName(roleId);
         return ApiResponse.ok(accountName);
     }
 
@@ -122,5 +123,21 @@ public class EmployeeController {
     ) {
         StaffDetailResponse response = employeeService.getEmployee(id);
         return ApiResponse.ok(response);
+    }
+
+    @Operation(summary = "重置员工密码", description = "管理员为指定员工重置密码，新密码将使用 PasswordEncoder 加密后保存")
+    @PutMapping("/{id}/reset-password")
+    public ApiResponse<Void> resetPassword(
+            @Parameter(description = "员工ID", required = true) @PathVariable("id") Integer staffId,
+            @Valid @RequestBody com.ncst.hospitaloutpatient.model.dto.hr.ResetPasswordRequest request
+    ) {
+        employeeService.resetPassword(staffId, request.getNewPassword());
+        return ApiResponse.ok();
+    }
+
+    @Operation(summary = "获取所有角色", description = "从 staff_role 表获取 roleId、roleName、description")
+    @GetMapping("/roles")
+    public ApiResponse<java.util.List<StaffRoleResponse>> listRoles() {
+        return ApiResponse.ok(employeeService.listRoles());
     }
 }

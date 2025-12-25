@@ -8,7 +8,6 @@ import com.ncst.hospitaloutpatient.model.dto.hr.StaffDetailResponse;
 import com.ncst.hospitaloutpatient.model.dto.hr.UpdateEmployeeDTO;
 import com.ncst.hospitaloutpatient.model.entity.auth.StaffEntity;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.kafka.SslBundleSslEngineFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,19 +71,35 @@ public class EmployeeService {
         }
     }
 
-    public String getAccountName(Integer departmentId) {
-        // 1. 获取科室前缀
-        String prefix = employeeMapper.getDepartmentPrefix(departmentId);
-        if (prefix == null) {
-            throw new BusinessException(40001, "无效的departmentId");
+    /**
+     * 生成员工账号名。
+     * 规则：根据 roleId -> staff_role.role_name，取前三位字母并转大写作为前缀（如 doctor -> DOC）。
+     * 然后在 staff_account.account_name 中找该前缀开头的账号，取最大后三位数字 + 1，格式化为 3 位。
+     * 示例：DOC001, DOC002, MAN003 ...
+     */
+    public String getAccountName(Integer roleId) {
+        if (roleId == null) {
+            throw new BusinessException(400, "roleId不能为空");
         }
-        // 2. 获取当前年份后两位
-        String year = String.valueOf(java.time.Year.now().getValue()).substring(2);
-        // 3. 查找今年该科室已有的最大序号
-        Integer maxSerial = employeeMapper.getMaxSerialNumber(prefix, year);
-        int nextSerial = (maxSerial == null ? 1 : maxSerial + 1);
-        // 4. 拼接
-        return String.format("%s%s%04d", prefix, year, nextSerial);
+
+        String roleName = employeeMapper.getRoleNameById(roleId);
+        if (roleName == null || roleName.isBlank()) {
+            throw new BusinessException(400, "无效的roleId=" + roleId);
+        }
+        if (roleName.length() < 3) {
+            throw new BusinessException(400, "role_name长度不足3位，roleId=" + roleId);
+        }
+
+        String prefix = roleName.substring(0, 3).toUpperCase();
+
+        Integer maxSeq = employeeMapper.getMaxAccountSeqByPrefix(prefix);
+        int nextSeq = (maxSeq == null ? 1 : maxSeq + 1);
+
+        if (nextSeq > 999) {
+            throw new BusinessException(500, "账号序号已超过999，prefix=" + prefix);
+        }
+
+        return prefix + String.format("%03d", nextSeq);
     }
 
     public void updateEmployee(Integer id, UpdateEmployeeDTO dto) {
@@ -137,5 +152,30 @@ public class EmployeeService {
         if (departmentId == null) return false;
         String deptType = employeeMapper.getDepartmentType(departmentId);
         return "OUTPATIENT".equalsIgnoreCase(deptType);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void resetPassword(Integer staffId, String newPassword) {
+        if (staffId == null) {
+            throw new BusinessException(400, "员工id不能为空");
+        }
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new BusinessException(400, "新密码不能为空");
+        }
+
+        boolean exists = employeeMapper.existsStaffById(staffId);
+        if (!exists) {
+            throw new BusinessException(404, "员工不存在，id=" + staffId);
+        }
+
+        String encoded = passwordEncoder.encode(newPassword);
+        int rows = employeeMapper.updatePasswordByStaffId(staffId, encoded);
+        if (rows != 1) {
+            throw new BusinessException(500, "重置密码失败");
+        }
+    }
+
+    public java.util.List<com.ncst.hospitaloutpatient.model.dto.hr.StaffRoleResponse> listRoles() {
+        return employeeMapper.selectAllRoles();
     }
 }

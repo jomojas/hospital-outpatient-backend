@@ -20,6 +20,7 @@
             display_name,
             fee
         FROM number_type_config
+        WHERE status = 1
         ORDER BY number_type
     </select>
 

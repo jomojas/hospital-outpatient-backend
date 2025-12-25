@@ -45,4 +45,7 @@ public class DrugDetailResponse {
 
     @Schema(description = "药品描述", example = "抗生素")
     private String description;
+
+    @Schema(description = "生产厂家", example = "某某制药有限公司")
+    private String manufacturer;
 }

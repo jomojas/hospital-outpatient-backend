@@ -76,7 +76,8 @@ public class DictionaryController {
 
     @GetMapping("/drug-units")
     @Operation(summary = "列举所有药品单位", description = "获取系统中所有药品单位的列表")
-    public List<DrugUnit> listDrugUnits() {
-        return dictionaryService.listDrugUnits();
+    public ApiResponse<List<DrugUnit>> listDrugUnits() {
+        List<DrugUnit> drugUnits = dictionaryService.listDrugUnits();
+        return ApiResponse.ok(drugUnits);
     }
 }

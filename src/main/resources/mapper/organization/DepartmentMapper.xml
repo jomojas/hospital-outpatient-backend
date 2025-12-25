@@ -11,13 +11,18 @@
 
     <select id="selectDepartmentsByType" resultType="com.ncst.hospitaloutpatient.model.dto.organization.DepartmentResponse">
         SELECT
-        department_id AS departmentId,
-        department_name AS departmentName,
-        type
+            department_id AS departmentId,
+            department_name AS departmentName,
+            type,
+            status
         FROM department
         <where>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+
             <if test="type != null and type != ''">
-                type = #{type}
+                AND type = #{type}
             </if>
         </where>
         ORDER BY department_id
@@ -38,10 +43,49 @@
         VALUES (#{departmentName}, #{type})
     </insert>
 
+    <insert id="insertDepartmentRoles" parameterType="map">
+        INSERT INTO department_role
+        (department_id, role_id)
+        VALUES
+        <foreach collection="roleIds" item="roleId" separator=",">
+            (#{departmentId}, #{roleId})
+        </foreach>
+    </insert>
+
+    <select id="selectLastInsertId" resultType="int">
+        SELECT LAST_INSERT_ID()
+    </select>
+
     <update id="updateDepartment" parameterType="map">
         UPDATE department
         SET department_name = #{req.departmentName},
             type = #{req.type}
+        WHERE department_id = #{departmentId}
+    </update>
+
+    <delete id="deleteDepartmentRolesByDepartmentId">
+        DELETE FROM department_role
+        WHERE department_id = #{departmentId}
+    </delete>
+
+    <select id="countActiveEmployeesByDeptId" parameterType="int" resultType="int">
+        SELECT COUNT(1)
+        FROM staff_account sa
+        INNER JOIN staff s ON sa.staff_id = s.staff_id
+        WHERE s.department_id = #{departmentId}
+          AND sa.status = 0
+    </select>
+
+    <select id="countByDeptAndStatus" parameterType="int" resultType="int">
+        SELECT COUNT(1)
+        FROM patient_visit pv
+        WHERE pv.department_id = #{departmentId}
+        AND pv.current_status != 'FINISHED'
+    </select>
+
+    <update id="updateStatus" parameterType="map">
+        UPDATE department
+        SET status = #{status}
         WHERE department_id = #{departmentId}
     </update>
 

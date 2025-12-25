@@ -155,7 +155,7 @@
         <if test="order == null or order.toLowerCase() != 'asc'">
             DESC
         </if>
-        LIMIT #{size} OFFSET #{offset}
+        LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
     <select id="countChargeItems" resultType="long">

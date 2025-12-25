@@ -27,4 +27,14 @@ public class MedicalItemResponse {
 
     @Schema(description = "描述", example = "胸部X光")
     private String description;
+
+    // ✅ 新增字段
+    @Schema(description = "执行科室ID", example = "4")
+    private Integer departmentId;
+
+    @Schema(description = "执行科室名称", example = "放射科")
+    private String departmentName;
+
+    @Schema(description = "状态 (1:启用, 0:停用)", example = "1")
+    private Integer status;
 }

@@ -21,7 +21,7 @@ public interface CatalogMapper {
 
     int countDisposalItems(@Param("keyword") String keyword);
 
-    List<DrugDetailResponse> selectDrugCatalog(@Param("size") int size,
+    List<DrugDetailResponse> selectDrugCatalog(@Param("pageSize") int pageSize,
                                                @Param("offset") int offset,
                                                @Param("keyword") String keyword,
                                                @Param("categoryId") Integer categoryId);

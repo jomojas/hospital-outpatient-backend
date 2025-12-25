@@ -4,17 +4,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;
-
 @Data
 public class SetRegistrationPriceRequest {
-    @Schema(description = "挂号类型价格列表")
-    private List<RegistrationTypePrice> prices;
+    private List<PriceItem> prices;
 
     @Data
-    public static class RegistrationTypePrice {
-        @Schema(description = "号类型", example = "GENERAL")
-        private String numberType;
-        @Schema(description = "价格", example = "20.00")
-        private BigDecimal fee;
+    public static class PriceItem {
+        // ✅ 修改为:
+        private String code; // 对应 number_type，如 "GENERAL"
+
+        private BigDecimal price;
     }
 }

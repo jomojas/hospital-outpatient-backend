@@ -286,6 +286,8 @@ CREATE TABLE drug (
     specification VARCHAR(50), -- 规格（如 200g）(字符串，添加药品时手动添加)
     unit VARCHAR(10), -- 单位（如 BOX/BOTTLE/PIECE/TUBE 等）
     retail_price DECIMAL(10,2), -- 零售价
+    manufacturer VARCHAR(100), -- 生产厂家
+    status TINYINT DEFAULT 1, -- 状态：1=上架/可用，0=下架/停用
     description VARCHAR(255), -- 备注
     FOREIGN KEY (category_id) REFERENCES drug_category(category_id)
 );
@@ -466,8 +468,4 @@ CREATE TABLE medical_record (
     FOREIGN KEY (registration_id) REFERENCES registration(registration_id),
     FOREIGN KEY (doctor_id) REFERENCES staff(staff_id)
 );
-```
-
-```
-
-```
+````

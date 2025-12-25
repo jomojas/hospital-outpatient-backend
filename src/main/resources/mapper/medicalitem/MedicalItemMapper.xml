@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ncst.hospitaloutpatient.mapper.medicalitem.MedicalItemMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.ncst.hospitaloutpatient.model.dto.reference.MedicalItemResponse">
+        <id column="item_id" property="itemId" />
+        <result column="item_code" property="itemCode" />
+        <result column="item_name" property="itemName" />
+        <result column="item_type" property="itemType" />
+        <result column="item_type_label" property="itemTypeLabel" />
+        <result column="price" property="price" />
+        <result column="description" property="description" />
+        <result column="status" property="status" />
+        <result column="department_id" property="departmentId" />
+        <result column="department_name" property="departmentName" />
+    </resultMap>
+
+    <!-- 列表查询 -->
+    <select id="selectItems" resultMap="BaseResultMap">
+        SELECT
+        t.item_id,
+        t.item_code,
+        t.item_name,
+        t.item_type,
+
+        CASE t.item_type
+        WHEN 'EXAM' THEN '检查'
+        WHEN 'LAB' THEN '检验'
+        WHEN 'DISPOSAL' THEN '处置'
+        ELSE t.item_type
+        END as item_type_label,
+        t.price,
+        t.description,
+        t.status,
+        t.department_id,
+        d.department_name
+        FROM medical_service_item t
+        LEFT JOIN department d ON t.department_id = d.department_id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (t.item_name LIKE concat('%', #{keyword}, '%')
+                OR t.item_code LIKE concat('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null">
+                AND t.status = #{status}
+            </if>
+            <if test="departmentId != null">
+                AND t.department_id = #{departmentId}
+            </if>
+        </where>
+        ORDER BY t.item_id DESC
+    </select>
+
+    <!-- 分页列表查询 -->
+    <select id="selectItemsPaged" resultMap="BaseResultMap">
+        SELECT
+        t.item_id,
+        t.item_code,
+        t.item_name,
+        t.item_type,
+
+        CASE t.item_type
+        WHEN 'EXAM' THEN '检查'
+        WHEN 'LAB' THEN '检验'
+        WHEN 'DISPOSAL' THEN '处置'
+        ELSE t.item_type
+        END as item_type_label,
+        t.price,
+        t.description,
+        t.status,
+        t.department_id,
+        d.department_name
+        FROM medical_service_item t
+        LEFT JOIN department d ON t.department_id = d.department_id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (t.item_name LIKE concat('%', #{keyword}, '%')
+                OR t.item_code LIKE concat('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null">
+                AND t.status = #{status}
+            </if>
+            <if test="departmentId != null">
+                AND t.department_id = #{departmentId}
+            </if>
+        </where>
+        ORDER BY t.item_id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 统计数量 -->
+    <select id="countItems" resultType="long">
+        SELECT COUNT(1)
+        FROM medical_service_item t
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (t.item_name LIKE concat('%', #{keyword}, '%')
+                OR t.item_code LIKE concat('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null">
+                AND t.status = #{status}
+            </if>
+            <if test="departmentId != null">
+                AND t.department_id = #{departmentId}
+            </if>
+        </where>
+    </select>
+
+    <!-- 新增项目 (默认状态 status = 1) -->
+    <insert id="insertItem">
+        INSERT INTO medical_service_item (
+            item_code,
+            item_name,
+            item_type,
+            price,
+            department_id,
+            description,
+            status
+        ) VALUES (
+                     #{itemCode},
+                     #{itemName},
+                     #{itemType},
+                     #{price},
+                     #{departmentId},
+                     #{description},
+                     1
+                 )
+    </insert>
+
+    <!-- 更新项目 -->
+    <update id="updateItem">
+        UPDATE medical_service_item
+        SET
+            item_code = #{req.itemCode},
+            item_name = #{req.itemName},
+            item_type = #{req.itemType},
+            price = #{req.price},
+            department_id = #{req.departmentId},
+            description = #{req.description}
+        WHERE item_id = #{itemId}
+    </update>
+
+    <!-- 切换状态 (利用异或或绝对值实现 0/1 翻转) -->
+    <update id="toggleStatus">
+        UPDATE medical_service_item
+        SET status = CASE WHEN status = 1 THEN 0 ELSE 1 END
+        WHERE item_id = #{itemId}
+    </update>
+
+</mapper>

@@ -13,10 +13,12 @@
     <insert id="insertDrug" parameterType="com.ncst.hospitaloutpatient.model.dto.inventory.CreateDrugRequest">
         INSERT INTO drug (
             drug_code, drug_name, category_id, production_date, shelf_life,
-            stock_quantity, specification, unit, retail_price, description
+            stock_quantity, specification, unit, retail_price, description,
+            manufacturer
         ) VALUES (
                      #{drugCode}, #{drugName}, #{categoryId}, #{productionDate}, #{shelfLife},
-                     #{stockQuantity}, #{specification}, #{unit}, #{retailPrice}, #{description}
+                     #{stockQuantity}, #{specification}, #{unit}, #{retailPrice}, #{description},
+                     #{manufacturer}
                  )
     </insert>
 
@@ -27,11 +29,18 @@
                         category_id = #{req.categoryId},
                         production_date = #{req.productionDate},
                         shelf_life = #{req.shelfLife},
-                        stock_quantity = #{req.stockQuantity},
                         specification = #{req.specification},
                         unit = #{req.unit},
                         retail_price = #{req.retailPrice},
-                        description = #{req.description}
+                        description = #{req.description},
+                        manufacturer = #{req.manufacturer}
+        WHERE drug_id = #{drugId}
+    </update>
+
+    <!-- 切换药品上下架状态 (1->0, 0->1) -->
+    <update id="toggleStatus">
+        UPDATE drug
+        SET status = CASE WHEN status = 1 THEN 0 ELSE 1 END
         WHERE drug_id = #{drugId}
     </update>
 

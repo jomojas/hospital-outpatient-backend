@@ -1,35 +1,47 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper
-        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ncst.hospitaloutpatient.mapper.organization.AdminMapper">
 
-    <!-- 判断staff_id是否为医生 -->
-    <select id="isDoctorRole" resultType="boolean">
-        SELECT COUNT(*) > 0
-        FROM staff s
-                 JOIN staff_role r ON s.role_id = r.role_id
-        WHERE s.staff_id = #{staffId}
-          AND r.role_name = 'doctor'
+    <!-- 保留带 status 字段的 selectRegistrationLevels 映射，删除重复项 -->
+    <select id="selectRegistrationLevels" resultType="com.ncst.hospitaloutpatient.model.dto.organization.RegistrationLevelResponse">
+        SELECT
+        number_type   AS code,
+        display_name  AS name,
+        fee           AS price,
+        status
+        FROM number_type_config
+        ORDER BY fee ASC
     </select>
 
-    <update id="updateDoctorQuota">
-        UPDATE doctor_quota
-        SET quota = #{quota}
-        WHERE staff_id = #{doctorId}
-          AND quota_date = #{quotaDate}
+    <update id="updatePrice">
+        UPDATE number_type_config
+        SET fee = #{price}
+        WHERE number_type = #{code}
     </update>
 
-    <insert id="insertDoctorQuota">
-        INSERT INTO doctor_quota (staff_id, quota_date, quota, used)
-        VALUES (#{doctorId}, #{quotaDate}, #{quota}, 0)
+
+    <select id="checkCodeExists" resultType="int">
+        SELECT COUNT(*) FROM number_type_config WHERE number_type = #{code}
+    </select>
+
+    <insert id="insertRegistrationLevel">
+        INSERT INTO number_type_config (
+        number_type,
+        display_name,
+        fee,
+        status
+        ) VALUES (
+        #{code},
+        #{name},
+        #{price},
+        1
+        )
     </insert>
 
-    <update id="updateRegistrationFee">
+    <update id="updateLevelStatus">
         UPDATE number_type_config
-        SET fee = #{fee}
-        WHERE number_type = #{numberType}
+        SET status = #{status}
+        WHERE number_type = #{code}
     </update>
 
 </mapper>

@@ -14,4 +14,9 @@ public interface DrugMapper {
     int insertDrug(CreateDrugRequest request);
 
     int updateDrug(@Param("drugId") Integer drugId, @Param("req") UpdateDrugRequest req);
+
+    /**
+     * 切换药品上下架状态：status 1->0, 0->1
+     */
+    int toggleStatus(@Param("drugId") Integer drugId);
 }

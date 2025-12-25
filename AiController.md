@@ -25,11 +25,13 @@
 
 - GET /api/employees → listEmployees()
 - POST /api/employees → createEmployee()
-- GET /api/employees/accountName → getAccountName()
+- GET /api/employees/accountName?roleId= → getAccountName()
 - PUT /api/employees/{id} → updateEmployee(@PathVariable id)
 - DELETE /api/employees/{id} → deleteEmployee(@PathVariable id)
-- PUT /api/employees/{id}/restore -> restoreEmployee(@PathVariable id)
+- PUT /api/employees/{id}/restore → restoreEmployee(@PathVariable id)
 - GET /api/employees/{id} → getEmployee(@PathVariable id)
+- PUT /api/employees/{id}/reset-password → resetPassword(@PathVariable id)
+- GET /api/employees/roles → listRoles()
 
 ---
 
@@ -47,10 +49,10 @@
 
 文件：com/ncst/hospitaloutpatient/controller/reference/CatalogController.java
 
-- GET /api/catalog/exam-items?page=&size=&keyword= → listExamItems()
-- GET /api/catalog/lab-items?page=&size=&keyword= → listLabItems()
-- GET /api/catalog/disposal-items?page=&size=&keyword= → listDisposalItems()
-- GET /api/catalog/drugs?page=&size=&keyword= → listDrugs()
+- GET /api/catalog/exam-items?page=&pageSize=&keyword= → listExamItems()
+- GET /api/catalog/lab-items?page=&pageSize=&keyword= → listLabItems()
+- GET /api/catalog/disposal-items?page=&pageSize=&keyword= → listDisposalItems()
+- GET /api/catalog/drugs?page=&pageSize=&keyword=&categoryId= → listDrugs()
 
 ---
 
@@ -58,20 +60,32 @@
 
 文件：com/ncst/hospitaloutpatient/controller/organization/DepartmentController.java
 
-- GET /api/departments/types -> listDepartmentTypes()
+- GET /api/departments/types → listDepartmentTypes()
 - GET /api/departments?type=OUTPATIENT|EXAM|LAB|PROCEDURE|PHARMACY|REGISTRATION → listDepartments()
-- GET /api/departments/{departmentId}/roles -> listDepartmentRoles(@PathVariable departmentId)
+- GET /api/departments/all?type=... → listAllDepartments()
+- GET /api/departments/{departmentId}/roles → listDepartmentRoles(@PathVariable departmentId)
 - POST /api/departments → createDepartment()
 - PUT /api/departments/{id} → updateDepartment(@PathVariable id)
+- DELETE /api/departments/{id} → deleteDepartment(@PathVariable id)
 
 文件：com/ncst/hospitaloutpatient/controller/organization/DoctorController.java
 
 - GET /api/doctors?departmentId=... → listDoctorsByDepartment()
+- GET /api/doctors/all → listDoctors()
 
 文件：com/ncst/hospitaloutpatient/controller/organization/AdminController.java
 
-- PUT /api/admin/doctors/{doctorId}/quota → setDoctorQuota(@PathVariable doctorId)
-- PUT /api/admin/registration/prices → setRegistrationPrices()
+- GET /api/admin/registration/levels → listRegistrationLevels()
+- POST /api/admin/registration/levels → createRegistrationLevel()
+- PATCH /api/admin/registration/levels/{code}/status?status=0|1 → updateRegistrationLevelStatus()
+- PUT /api/admin/registration/prices → updateRegistrationPrices()
+
+文件：com/ncst/hospitaloutpatient/controller/organization/ScheduleController.java
+
+- GET /api/schedules → listSchedules()
+- PUT /api/schedules/quota → setQuota()
+- POST /api/schedules/quota/batch → batchSetQuota()
+- POST /api/schedules/copy → copySchedule()
 
 ---
 
@@ -100,17 +114,17 @@
 
 文件：com/ncst/hospitaloutpatient/controller/billing/ChargeController.java
 
-- GET /api/charges/items?keyword=&page=&size=&sortBy=&order= → listChargeItems()
+- GET /api/charges/items?type=&keyword=&itemType=&drugCategory=&page=&pageSize=&sortBy=&order= → listChargeItems()
 - POST /api/charges/settle → settleCharges()
 
 文件：com/ncst/hospitaloutpatient/controller/billing/RefundController.java
 
-- GET /api/refunds/items?name=&medicalNo=&page=&size= → listRefundableItems()
+- GET /api/refunds/items?type=&keyword=&itemType=&drugCategory=&page=&pageSize=&sortBy=&order= → listRefundableItems()
 - POST /api/refunds → refund()
 
 文件：com/ncst/hospitaloutpatient/controller/billing/FeeController.java
 
-- GET /api/fees?name=&medicalNo=&status=PAID|UNPAID&startDate=&endDate=&page=&size= → queryFees()
+- GET /api/fees?name=&status=PAID|REFUND&startTime=&endTime=&page=&pageSize=&sortBy=&order= → queryFees()
 
 ---
 
@@ -119,55 +133,71 @@
 文件：com/ncst/hospitaloutpatient/controller/casefile/CaseController.java
 
 - POST /api/cases → createCase()
-- POST /api/cases/{caseId}/applies → submitApplies(@PathVariable caseId)
-- GET /api/cases/{caseId}/results → listCaseResults(@PathVariable caseId)
-- POST /api/cases/{caseId}/prescriptions → createPrescriptions(@PathVariable caseId)
-- GET /api/cases/{caseId}/fees → listCaseFees(@PathVariable caseId)
-- GET /api/cases/registrations/patients → listDoctorRegisteredPatients()
+- GET /api/cases/registration/{registrationId}/record-id → getRecordIdByRegistrationId()
+- GET /api/cases/{caseId} → getCaseDetail()
 - PUT /api/cases/{caseId} → updateCase(@PathVariable caseId, @RequestBody CaseRequestDTO request)
+- PUT /api/cases/{caseId}/diagnosis → confirmCase(@PathVariable caseId)
+- POST /api/cases/{caseId}/applies → submitApplies(@PathVariable caseId)
+- GET /api/cases/{caseId}/items → getCaseItemsHistory(@PathVariable caseId)
+- POST /api/cases/applies/{applyId}/revoke → revokeMedicalItemApply(@PathVariable applyId)
+- GET /api/cases/{caseId}/results → listCaseResults(@PathVariable caseId)
+- GET /api/cases/{caseId}/prescriptions → listCasePrescriptions(@PathVariable caseId)
+- POST /api/cases/{caseId}/prescriptions → createPrescriptions(@PathVariable caseId)
+- POST /api/cases/prescriptions/{prescriptionId}/revoke → revokePrescription(@PathVariable prescriptionId)
+- GET /api/cases/{caseId}/fees → listCaseFees(@PathVariable caseId)
+- GET /api/cases/registrations/patients?page=&pageSize=&keyword=&status= → listDoctorRegisteredPatients()
+- GET /api/cases/registrations/patients/status-count → countPatientsByFrontendStatus()
+- GET /api/cases/registrations/patients/{medicalNo}/detail → getPatientDetailByMedicalNo()
+- GET /api/cases/registrations/{registrationId}/context → getClinicContext()
+- POST /api/cases/registrations/{registrationId}/finish → finishVisit()
+
 ---
 
 ## 9) medicalitem 模块
 
+文件：com/ncst/hospitaloutpatient/controller/medicalitem/MedicalItemController.java
+
+- GET /api/items?keyword=&status=&departmentId=&page=&pageSize= → listItems()
+- POST /api/items → createItem()
+- PUT /api/items/{itemId} → updateItem(@PathVariable itemId)
+- PATCH /api/items/{itemId}/toggle → toggleItemStatus(@PathVariable itemId)
+
 文件：com/ncst/hospitaloutpatient/controller/medicalitem/ExamController.java
 
-- GET /api/exam/applies?status=UNFINISHED&page=&size= → listExamApplies()
-- POST /api/exam/applies/{applyId}/cancel → cancelExamApply(@PathVariable applyId)
+- GET /api/exam/applies?keyword=&page=&pageSize=&sortBy=&order= → listExamApplies()
 - POST /api/exam/applies/{applyId}/execute → executeExam(@PathVariable applyId)
 - POST /api/exam/applies/{applyId}/result → submitExamResult(@PathVariable applyId)
 - GET /api/exam/departments → listExamDepartments()
 - GET /api/exam/staffs/{departmentId} → listExamStaffs()
-- GET /api/exam/records?keyword=&page=&size= → listExamRecords()
+- GET /api/exam/records?keyword=&operateType=&page=&pageSize=&sortBy=&order= → listExamRecords()
 
 文件：com/ncst/hospitaloutpatient/controller/medicalitem/LabController.java
 
-- GET /api/lab/applies?status=UNFINISHED&page=&size= → listLabApplies()
-- POST /api/lab/applies/{applyId}/cancel → cancelLabApply(@PathVariable applyId)
+- GET /api/lab/applies?keyword=&page=&pageSize=&sortBy=&order= → listLabApplies()
 - POST /api/lab/applies/{applyId}/execute → executeLab(@PathVariable applyId)
 - POST /api/lab/applies/{applyId}/result → submitLabResult(@PathVariable applyId)
 - GET /api/lab/departments → listLabDepartments()
 - GET /api/lab/staffs/{departmentId} → listLabStaffs()
-- GET /api/lab/records?keyword=&page=&size= → listLabRecords()
+- GET /api/lab/records?keyword=&operateType=&page=&pageSize=&sortBy=&order= → listLabRecords()
 
 文件：com/ncst/hospitaloutpatient/controller/medicalitem/DisposalController.java
 
-- GET /api/disposal/applies?status=UNFINISHED&page=&size= → listDisposalApplies()
-- POST /api/disposal/applies/{applyId}/cancel → cancelDisposalApply(@PathVariable applyId)
+- GET /api/disposal/applies?keyword=&page=&pageSize=&sortBy=&order= → listDisposalApplies()
 - POST /api/disposal/applies/{applyId}/execute → executeDisposal(@PathVariable applyId)
 - POST /api/disposal/applies/{applyId}/result → submitDisposalResult(@PathVariable applyId)
 - GET /api/disposal/departments → listDisposalDepartments()
 - GET /api/disposal/staffs/{departmentId} → listDisposalStaffs()
-- GET /api/disposal/records?keyword=&page=&size= → listDisposalRecords()
+- GET /api/disposal/records?keyword=&operateType=&page=&pageSize=&sortBy=&order= → listDisposalRecords()
+
 ---
 
 ## 10) pharmacy 模块
 
 文件：com/ncst/hospitaloutpatient/controller/pharmacy/PharmacyController.java
 
-- GET /api/pharmacy/dispense/pending?keyword=&page=&size= → listDispensePending()
+- GET /api/pharmacy/dispense/pending?keyword=&sortBy=&order=&page=&pageSize= → listDispensePending()
 - POST /api/pharmacy/dispense → dispenseDrugs()
-- POST /api/pharmacy/return → returnDrugs()
-- GET /api/pharmacy/records?keyword=&page=&size= → listPharmacyRecords()
+- GET /api/pharmacy/records?keyword=&type=&sortBy=&order=&page=&pageSize= → listPharmacyRecords()
 
 ---
 
@@ -177,6 +207,7 @@
 
 - POST /api/drugs → createDrug()
 - PUT /api/drugs/{id} → updateDrug(@PathVariable id)
+- PATCH /api/drugs/{id}/toggle → toggleDrugStatus(@PathVariable id)
 
 ---
 
@@ -184,16 +215,14 @@
 
 文件：com/ncst/hospitaloutpatient/controller/analytics/StatsController.java
 
-- GET /api/stats/registrations/trend?startDate=&endDate=&period=auto → registrationsTrend()
-- GET /api/stats/registrations/type-breakdown?startDate=&endDate= → registrationsTypeBreakdown()
-- GET /api/stats/registrations/by-department?startDate=&endDate=&topN= → registrationsByDepartment()
-- GET /api/stats/registrations/by-doctor?startDate=&endDate=&topN= → registrationsByDoctor()
-- GET /api/stats/revenue/trend?startDate=&endDate=&period=auto → revenueTrend()
-- GET /api/stats/revenue/by-type?startDate=&endDate= → revenueByType()
-          - GET /api/stats/revenue/by-payment-method?startDate=&endDate= → revenueByPaymentMethod()
-- GET /api/stats/revenue/by-department?startDate=&endDate=&topN= → revenueByDepartment()
-          - GET /api/stats/revenue/by-doctor?startDate=&endDate=&topN= → revenueByDoctor()
-- GET /api/stats/refund/trend?startDate=&endDate=&period=auto → refundTrend()
+- GET /api/stats/registrations/trend?period=month|season|year|all|auto&startDate=&endDate= → registrationsTrend()
+- GET /api/stats/registrations/type-breakdown?period=...&startDate=&endDate= → registrationsTypeBreakdown()
+- GET /api/stats/registrations/by-department?period=...&startDate=&endDate= → registrationsByDepartment()
+- GET /api/stats/registrations/by-doctor?period=...&startDate=&endDate= → registrationsByDoctor()
+- GET /api/stats/revenue/trend?period=...&startDate=&endDate= → revenueTrend()
+- GET /api/stats/revenue/by-type?period=...&startDate=&endDate= → revenueByType()
+- GET /api/stats/revenue/by-department?period=...&startDate=&endDate= → revenueByDepartment()
+- GET /api/stats/refund/trend?period=...&startDate=&endDate= → refundTrend()
 
 ---
 

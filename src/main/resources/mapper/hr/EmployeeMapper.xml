@@ -89,22 +89,19 @@
             (#{staffId}, #{isExpert})
     </insert>
 
-    <select id="getDepartmentType" resultType="string">
-        SELECT type FROM department WHERE department_id = #{departmentId}
+    <!-- 根据 roleId 获取角色名 -->
+    <select id="getRoleNameById" resultType="string">
+        SELECT role_name
+        FROM staff_role
+        WHERE role_id = #{roleId}
     </select>
 
-    <!-- 获取department type的前三个字符作为前缀 -->
-    <select id="getDepartmentPrefix" resultType="string">
-        SELECT UPPER(LEFT(type, 3)) AS prefix
-        FROM department
-        WHERE department_id = #{departmentId}
-    </select>
-
-    <!-- 获取某prefix+年份的最大流水号 -->
-    <select id="getMaxSerialNumber" resultType="int">
-        SELECT MAX(CAST(SUBSTRING(account_name, 6, 4) AS UNSIGNED))
+    <!-- 获取账号前缀对应的最大后三位序号（例如 DOC011 -> 11） -->
+    <select id="getMaxAccountSeqByPrefix" resultType="int">
+        SELECT MAX(CAST(RIGHT(account_name, 3) AS UNSIGNED))
         FROM staff_account
-        WHERE account_name LIKE CONCAT(#{prefix}, #{year}, '%')
+        WHERE account_name LIKE CONCAT(#{prefix}, '%')
+          AND account_name REGEXP CONCAT('^', #{prefix}, '[0-9]{3}$')
     </select>
 
     <!-- 更新 staff 表 -->
@@ -157,6 +154,27 @@
                  LEFT JOIN staff_role r ON s.role_id = r.role_id
                  LEFT JOIN staff_doctor_ext ext ON s.staff_id = ext.staff_id
         WHERE s.staff_id = #{staffId}
+    </select>
+
+    <select id="existsStaffById" resultType="boolean">
+        SELECT COUNT(1) > 0
+        FROM staff
+        WHERE staff_id = #{staffId}
+    </select>
+
+    <update id="updatePasswordByStaffId">
+        UPDATE staff_account
+        SET password = #{password}
+        WHERE staff_id = #{staffId}
+    </update>
+
+    <select id="selectAllRoles" resultType="com.ncst.hospitaloutpatient.model.dto.hr.StaffRoleResponse">
+        SELECT
+            role_id   AS roleId,
+            role_name AS roleName,
+            description
+        FROM staff_role
+        ORDER BY role_id
     </select>
 
 </mapper>

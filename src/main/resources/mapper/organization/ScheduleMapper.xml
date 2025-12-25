@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ncst.hospitaloutpatient.mapper.organization.ScheduleMapper">
+
+    <!-- 1. 查科室下的所有医生 -->
+    <select id="selectDoctorsByDept" resultType="com.ncst.hospitaloutpatient.model.dto.organization.DoctorScheduleResponse">
+        SELECT
+            s.staff_id,
+            s.name as staff_name,
+            s.description
+        FROM staff s
+        INNER JOIN staff_role r ON s.role_id = r.role_id
+        WHERE s.department_id = #{deptId}
+          AND r.role_name = 'doctor'
+    </select>
+
+    <!-- 2. 查具体的排班数据 -->
+    <select id="selectSchedulesByDoctorIds" resultType="com.ncst.hospitaloutpatient.model.dto.organization.DoctorScheduleResponse$DailySchedule">
+        SELECT
+        id,
+        staff_id as staffId, -- 注意这里虽然 DTO 内部类没这个字段，但为了 Service 层分组，我们需要查出来
+        quota_date as date,
+        quota,
+        used
+        FROM doctor_quota
+        WHERE staff_id IN
+        <foreach collection="staffIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND quota_date BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <!-- 2. 查具体的排班数据 (返回 Map 方便 Service 处理) -->
+    <select id="selectSchedulesMap" resultType="java.util.Map">
+        SELECT
+        id,
+        staff_id,
+        quota_date,
+        quota,
+        used
+        FROM doctor_quota
+        WHERE staff_id IN
+        <foreach collection="staffIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND quota_date BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <!-- 3. 查 ID -->
+    <select id="selectQuotaId" resultType="Integer">
+        SELECT id FROM doctor_quota
+        WHERE staff_id = #{staffId} AND quota_date = #{date}
+    </select>
+
+    <!-- 4. 更新 -->
+    <update id="updateQuota">
+        UPDATE doctor_quota SET quota = #{quota} WHERE id = #{id}
+    </update>
+
+    <!-- 5. 插入 -->
+    <insert id="insertQuota">
+        INSERT INTO doctor_quota (staff_id, quota_date, quota, used)
+        VALUES (#{staffId}, #{date}, #{quota}, 0)
+    </insert>
+
+</mapper>

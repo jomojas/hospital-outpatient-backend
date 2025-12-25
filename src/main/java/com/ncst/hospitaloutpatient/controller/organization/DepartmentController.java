@@ -24,13 +24,23 @@ public class DepartmentController {
         return ApiResponse.ok(types);
     }
 
-    @Operation(summary = "获取指定类型的科室", description = "根据科室类型获取所有科室")
+    @Operation(summary = "获取指定类型的科室", description = "根据科室类型获取启用的科室")
     @GetMapping
     public ApiResponse<List<DepartmentResponse>> listDepartments(
             @Parameter(description = "科室类型", example = "OUTPATIENT")
             @RequestParam(required = false) String type
     ) {
-        List<DepartmentResponse> departments = departmentService.listDepartments(type);
+        List<DepartmentResponse> departments = departmentService.listDepartments(type, 1);
+        return ApiResponse.ok(departments);
+    }
+
+    @Operation(summary = "获取指定类型的科室", description = "根据科室类型获取所有科室")
+    @GetMapping("/all")
+    public ApiResponse<List<DepartmentResponse>> listAllDepartments(
+            @Parameter(description = "科室类型", example = "OUTPATIENT")
+            @RequestParam(required = false) String type
+    ) {
+        List<DepartmentResponse> departments = departmentService.listDepartments(type, null);
         return ApiResponse.ok(departments);
     }
 
@@ -60,6 +70,14 @@ public class DepartmentController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "科室信息", required = true)
             @RequestBody UpdateDepartmentRequest request) {
         departmentService.updateDepartment(departmentId, request);
+        return ApiResponse.ok();
+    }
+
+    @Operation(summary = "删除科室信息")
+    @DeleteMapping("/{id}")
+    public ApiResponse<?> deleteDepartment(
+            @PathVariable("id") Integer departmentId) {
+        departmentService.deleteDepartment(departmentId);
         return ApiResponse.ok();
     }
 }

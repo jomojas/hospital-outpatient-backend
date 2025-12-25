@@ -38,4 +38,12 @@ public class DrugService {
             throw new BusinessException(500, "药品信息更新失败");
         }
     }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void toggleStatus(Integer drugId) {
+        int rows = drugMapper.toggleStatus(drugId);
+        if (rows == 0) {
+            throw new BusinessException(500, "切换药品状态失败，药品可能不存在");
+        }
+    }
 }

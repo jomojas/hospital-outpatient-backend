@@ -110,9 +110,9 @@
         FROM transaction
         WHERE transaction_time &gt;= #{startDate}
         AND transaction_time &lt;= #{endDate}
-        AND business_type IN ('REGISTRATION', 'PROJECT', 'DRUG')
+        AND business_type IN ('REGISTRATION', 'MEDICAL_ITEM', 'DRUG')
         GROUP BY time
-        ORDER BY time ASC
+        ORDER BY time
     </select>
 
     <!-- 查询最早收入日期 -->
@@ -120,7 +120,7 @@
         SELECT DATE_FORMAT(MIN(transaction_time), '%Y-%m-%d')
         FROM transaction
         WHERE transaction_type = 'PAY'
-          AND business_type IN ('REGISTRATION', 'PROJECT', 'DRUG')
+          AND business_type IN ('REGISTRATION', 'MEDICAL_ITEM', 'DRUG')
     </select>
 
     <select id="selectRevenueByType" resultType="map">
@@ -174,7 +174,7 @@
         FROM transaction
         WHERE transaction_type = 'REFUND'
         AND transaction_time &gt;= #{startDate}
-        AND transaction_time &lt; #{endDate}
+        AND transaction_time &lt;= #{endDate}
         GROUP BY date
         ORDER BY date
     </select>
