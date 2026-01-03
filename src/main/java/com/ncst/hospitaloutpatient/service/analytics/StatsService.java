@@ -106,73 +106,39 @@ public class StatsService {
         }
 
         Map<String, List<?>> result = new HashMap<>();
-        result.put("xaxis", fullXAxis);
+        result.put("xAxis", fullXAxis);
         result.put("series", fullSeries);
         return result;
     }
 
-//    public static Map<String, List<?>> fillDateGaps(LocalDate startDate, LocalDate endDate,
-//                                                    List<String> xAxis, List<Integer> series,
-//                                                    String granularity) {
-//        Map<String, Integer> dateValueMap = new HashMap<>();
-//        for (int i = 0; i < xAxis.size(); i++) {
-//            dateValueMap.put(xAxis.get(i), series.get(i));
-//        }
-//
-//        List<String> fullXAxis = new ArrayList<>();
-//        List<Integer> fullSeries = new ArrayList<>();
-//
-//        if ("day".equalsIgnoreCase(granularity)) {
-//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-//            LocalDate date = startDate;
-//            while (!date.isAfter(endDate)) {
-//                String ds = date.format(formatter);
-//                fullXAxis.add(ds);
-//                fullSeries.add(dateValueMap.getOrDefault(ds, 0));
-//                date = date.plusDays(1);
-//            }
-//        } else if ("month".equalsIgnoreCase(granularity)) {
-//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
-//            LocalDate date = LocalDate.of(startDate.getYear(), startDate.getMonth(), 1);
-//            LocalDate endMonth = LocalDate.of(endDate.getYear(), endDate.getMonth(), 1);
-//            while (!date.isAfter(endMonth)) {
-//                String ds = date.format(formatter);
-//                fullXAxis.add(ds);
-//                fullSeries.add(dateValueMap.getOrDefault(ds, 0));
-//                date = date.plusMonths(1);
-//            }
-//        } else if ("year".equalsIgnoreCase(granularity)) {
-//            int startYear = startDate.getYear();
-//            int endYear = endDate.getYear();
-//            for (int y = startYear; y <= endYear; y++) {
-//                String ds = String.valueOf(y);
-//                fullXAxis.add(ds);
-//                fullSeries.add(dateValueMap.getOrDefault(ds, 0));
-//            }
-//        } else {
-//            // 默认按天处理
-//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-//            LocalDate date = startDate;
-//            while (!date.isAfter(endDate)) {
-//                String ds = date.format(formatter);
-//                fullXAxis.add(ds);
-//                fullSeries.add(dateValueMap.getOrDefault(ds, 0));
-//                date = date.plusDays(1);
-//            }
-//        }
-//
-//        Map<String, List<?>> result = new HashMap<>();
-//        result.put("xaxis", fullXAxis);
-//        result.put("series", fullSeries);
-//        return result;
-//    }
 
-
+    /**
+     * period=auto 时：
+     * - 如果前端传了 startDate/endDate，则按传入的区间
+     * - 如果没传，则默认最近 1 个月（与 month 口径一致：today.minusMonths(1).plusDays(1) ~ today）
+     */
+    private static LocalDate[] resolveAutoRange(LocalDate startDate, LocalDate endDate) {
+        if (startDate != null && endDate != null) {
+            return new LocalDate[]{startDate, endDate};
+        }
+        LocalDate[] range = getStartAndEndByPeriod("month");
+        return new LocalDate[]{
+                (startDate != null) ? startDate : range[0],
+                (endDate != null) ? endDate : range[1]
+        };
+    }
 
     public RegistrationsTrendResponse registrationsTrend(String periodStr, String startDateStr, String endDateStr) {
         StatisticsPeriod period = StatisticsPeriod.valueOf(periodStr.toUpperCase());
         LocalDate startDate = (startDateStr != null && !startDateStr.isEmpty()) ? LocalDate.parse(startDateStr) : null;
         LocalDate endDate = (endDateStr != null && !endDateStr.isEmpty()) ? LocalDate.parse(endDateStr) : null;
+
+        // period=auto：允许不传 startDate/endDate，默认最近 1 个月
+        if (period == StatisticsPeriod.AUTO) {
+            LocalDate[] range = resolveAutoRange(startDate, endDate);
+            startDate = range[0];
+            endDate = range[1];
+        }
 
         // period为all时，自动查最早挂号时间
         if (period == StatisticsPeriod.ALL) {
@@ -188,8 +154,8 @@ public class StatsService {
             if (endDate == null) {
                 endDate = LocalDate.now();
             }
-        } else {
-            // 其它period用工具方法补齐
+        } else if (period != StatisticsPeriod.AUTO) {
+            // 其它 period 用工具方法补齐
             if (startDate == null || endDate == null) {
                 LocalDate[] range = getStartAndEndByPeriod(periodStr.toLowerCase());
                 if (startDate == null) startDate = range[0];
@@ -220,7 +186,7 @@ public class StatsService {
         );
 
         RegistrationsTrendResponse resp = new RegistrationsTrendResponse();
-        resp.setXAxis((List<String>) filled.get("xaxis"));
+        resp.setXAxis((List<String>) filled.get("xAxis"));
         resp.setSeries((List<Integer>) filled.get("series"));
         return resp;
     }
@@ -239,6 +205,11 @@ public class StatsService {
             if (endDateStr != null && !endDateStr.isEmpty()) {
                 endDate = LocalDate.parse(endDateStr);
             }
+
+            // auto 允许不传，默认最近 1 个月
+            LocalDate[] range = resolveAutoRange(startDate, endDate);
+            startDate = range[0];
+            endDate = range[1];
         } else if ("all".equalsIgnoreCase(period)) {
             // 查最早挂号日期
             String earliestDateStr = statsMapper.selectEarliestRegistrationDate();
@@ -270,6 +241,11 @@ public class StatsService {
             if (endDateStr != null && !endDateStr.isEmpty()) {
                 endDate = LocalDate.parse(endDateStr);
             }
+
+            // auto 允许不传，默认最近 1 个月
+            LocalDate[] range = resolveAutoRange(startDate, endDate);
+            startDate = range[0];
+            endDate = range[1];
         } else if ("all".equalsIgnoreCase(period)) {
             String earliestDateStr = statsMapper.selectEarliestRegistrationDate();
             startDate = (earliestDateStr != null) ? LocalDate.parse(earliestDateStr) : LocalDate.now();
@@ -300,6 +276,11 @@ public class StatsService {
             if (endDateStr != null && !endDateStr.isEmpty()) {
                 endDate = LocalDate.parse(endDateStr);
             }
+
+            // auto 允许不传，默认最近 1 个月
+            LocalDate[] range = resolveAutoRange(startDate, endDate);
+            startDate = range[0];
+            endDate = range[1];
         } else if ("all".equalsIgnoreCase(period)) {
             String earliestDateStr = statsMapper.selectEarliestRegistrationDate();
             startDate = (earliestDateStr != null) ? LocalDate.parse(earliestDateStr) : LocalDate.now();
@@ -321,6 +302,13 @@ public class StatsService {
         LocalDate startDate = (startDateStr != null && !startDateStr.isEmpty()) ? LocalDate.parse(startDateStr) : null;
         LocalDate endDate = (endDateStr != null && !endDateStr.isEmpty()) ? LocalDate.parse(endDateStr) : null;
 
+        // period=auto：允许不传 startDate/endDate，默认最近 1 个月
+        if (period == StatisticsPeriod.AUTO) {
+            LocalDate[] range = resolveAutoRange(startDate, endDate);
+            startDate = range[0];
+            endDate = range[1];
+        }
+
         // period为all时，自动查最早收入时间
         if (period == StatisticsPeriod.ALL) {
             if (startDate == null) {
@@ -334,7 +322,7 @@ public class StatsService {
             if (endDate == null) {
                 endDate = LocalDate.now();
             }
-        } else if (!"AUTO".equalsIgnoreCase(periodStr)) {
+        } else if (period != StatisticsPeriod.AUTO) {
             // 其它period用工具方法补齐
             if (startDate == null || endDate == null) {
                 LocalDate[] range = getStartAndEndByPeriod(periodStr.toLowerCase());
@@ -366,7 +354,7 @@ public class StatsService {
         );
 
         RevenueTrendResponse resp = new RevenueTrendResponse();
-        resp.setXAxis((List<String>) filled.get("xaxis"));
+        resp.setXAxis((List<String>) filled.get("xAxis"));
         resp.setSeries((List<Double>) filled.get("series"));
         return resp;
     }
@@ -375,6 +363,13 @@ public class StatsService {
         StatisticsPeriod period = StatisticsPeriod.valueOf(periodStr.toUpperCase());
         LocalDate startDate = (startDateStr != null && !startDateStr.isEmpty()) ? LocalDate.parse(startDateStr) : null;
         LocalDate endDate = (endDateStr != null && !endDateStr.isEmpty()) ? LocalDate.parse(endDateStr) : null;
+
+        // period=auto：允许不传 startDate/endDate，默认最近 1 个月
+        if (period == StatisticsPeriod.AUTO) {
+            LocalDate[] range = resolveAutoRange(startDate, endDate);
+            startDate = range[0];
+            endDate = range[1];
+        }
 
         // period为all时，自动查最早收入时间
         if (period == StatisticsPeriod.ALL) {
@@ -389,7 +384,7 @@ public class StatsService {
             if (endDate == null) {
                 endDate = LocalDate.now();
             }
-        } else if (!"AUTO".equalsIgnoreCase(periodStr)) {
+        } else if (period != StatisticsPeriod.AUTO) {
             // 其它period用工具方法补齐
             if (startDate == null || endDate == null) {
                 LocalDate[] range = getStartAndEndByPeriod(periodStr.toLowerCase());
@@ -427,6 +422,13 @@ public class StatsService {
         LocalDate startDate = (startDateStr != null && !startDateStr.isEmpty()) ? LocalDate.parse(startDateStr) : null;
         LocalDate endDate = (endDateStr != null && !endDateStr.isEmpty()) ? LocalDate.parse(endDateStr) : null;
 
+        // period=auto：允许不传 startDate/endDate，默认最近 1 个月
+        if (period == StatisticsPeriod.AUTO) {
+            LocalDate[] range = resolveAutoRange(startDate, endDate);
+            startDate = range[0];
+            endDate = range[1];
+        }
+
         // period为all时，自动查最早收入时间
         if (period == StatisticsPeriod.ALL) {
             if (startDate == null) {
@@ -440,7 +442,7 @@ public class StatsService {
             if (endDate == null) {
                 endDate = LocalDate.now();
             }
-        } else if (!"AUTO".equalsIgnoreCase(periodStr)) {
+        } else if (period != StatisticsPeriod.AUTO) {
             // 其它period用工具方法补齐
             if (startDate == null || endDate == null) {
                 LocalDate[] range = getStartAndEndByPeriod(periodStr.toLowerCase());
@@ -470,6 +472,13 @@ public class StatsService {
         LocalDate startDate = (startDateStr != null && !startDateStr.isEmpty()) ? LocalDate.parse(startDateStr) : null;
         LocalDate endDate = (endDateStr != null && !endDateStr.isEmpty()) ? LocalDate.parse(endDateStr) : null;
 
+        // period=auto：允许不传 startDate/endDate，默认最近 1 个月
+        if (period == StatisticsPeriod.AUTO) {
+            LocalDate[] range = resolveAutoRange(startDate, endDate);
+            startDate = range[0];
+            endDate = range[1];
+        }
+
         // period为all时，自动查最早收入时间
         if (period == StatisticsPeriod.ALL) {
             if (startDate == null) {
@@ -483,7 +492,7 @@ public class StatsService {
             if (endDate == null) {
                 endDate = LocalDate.now();
             }
-        } else {
+        } else if (period != StatisticsPeriod.AUTO) {
             // 其它period用工具方法补齐
             if (startDate == null || endDate == null) {
                 LocalDate[] range = getStartAndEndByPeriod(periodStr.toLowerCase());
@@ -518,7 +527,7 @@ public class StatsService {
 
         // 5. 封装返回
         RefundTrendResponse resp = new RefundTrendResponse();
-        resp.setXAxis((List<String>) filled.get("xaxis"));
+        resp.setXAxis((List<String>) filled.get("xAxis"));
         resp.setSeries((List<Double>) filled.get("series"));
         return resp;
     }

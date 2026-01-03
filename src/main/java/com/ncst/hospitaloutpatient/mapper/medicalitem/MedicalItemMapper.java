@@ -56,4 +56,9 @@ public interface MedicalItemMapper {
      * 切换状态 (1->0, 0->1)
      */
     int toggleStatus(@Param("itemId") Integer itemId);
+
+    /**
+     * 获取最大医疗项目编码序列
+     */
+    Integer getMaxMedicalItemSeq(@Param("type") String type, @Param("prefix") String prefix);
 }

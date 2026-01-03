@@ -1,7 +1,6 @@
 package com.ncst.hospitaloutpatient.service.medicalitem;
 
 import com.ncst.hospitaloutpatient.common.exception.BusinessException;
-import com.ncst.hospitaloutpatient.mapper.medicalitem.MedicalItemMapper;
 import com.ncst.hospitaloutpatient.model.dto.medicalitem.CreateMedicalItemRequest;
 import com.ncst.hospitaloutpatient.model.dto.medicalitem.UpdateMedicalItemRequest;
 import com.ncst.hospitaloutpatient.model.dto.reference.MedicalItemResponse;
@@ -66,5 +65,27 @@ public class MedicalItemService {
         if (rows == 0) {
             throw new BusinessException(500, "切换状态失败，项目可能不存在");
         }
+    }
+
+    public String generateMedicalItemCode(String type) {
+        if (type == null || type.isBlank()) {
+            throw new BusinessException(400, "type不能为空");
+        }
+
+        String normalized = type.trim().toUpperCase();
+        String prefix;
+        switch (normalized) {
+            case "EXAM" -> prefix = "EX";
+            case "LAB" -> prefix = "LAB";
+            case "DISPOSAL" -> prefix = "DISP";
+            default -> throw new BusinessException(400, "不支持的项目类型: " + type);
+        }
+
+        Integer maxSeq = medicalItemMapper.getMaxMedicalItemSeq(normalized, prefix);
+        int next = (maxSeq == null ? 1 : maxSeq + 1);
+        if (next > 999) {
+            throw new BusinessException(500, "编码序号已超过999，prefix=" + prefix);
+        }
+        return prefix + String.format("%03d", next);
     }
 }

@@ -4,13 +4,12 @@
 
     <!-- 保留带 status 字段的 selectRegistrationLevels 映射，删除重复项 -->
     <select id="selectRegistrationLevels" resultType="com.ncst.hospitaloutpatient.model.dto.organization.RegistrationLevelResponse">
-        SELECT
-        number_type   AS code,
-        display_name  AS name,
-        fee           AS price,
-        status
+        SELECT number_type  AS code,
+               display_name AS name,
+               fee          AS price,
+               status
         FROM number_type_config
-        ORDER BY fee ASC
+        ORDER BY fee
     </select>
 
     <update id="updatePrice">

@@ -21,7 +21,7 @@
             OR item_code LIKE CONCAT('%', #{keyword}, '%'))
         </if>
         ORDER BY item_id
-        LIMIT #{pageSize} OFFSET #{offset}
+        LIMIT #{size} OFFSET #{offset}
     </select>
 
     <select id="countExamItems" resultType="int">
@@ -51,7 +51,7 @@
             OR item_code LIKE CONCAT('%', #{keyword}, '%'))
         </if>
         ORDER BY item_id
-        LIMIT #{pageSize} OFFSET #{offset}
+        LIMIT #{size} OFFSET #{offset}
     </select>
 
     <select id="countLabItems" resultType="int">
@@ -81,7 +81,7 @@
             OR item_code LIKE CONCAT('%', #{keyword}, '%'))
         </if>
         ORDER BY item_id
-        LIMIT #{pageSize} OFFSET #{offset}
+        LIMIT #{size} OFFSET #{offset}
     </select>
 
     <select id="countDisposalItems" resultType="int">
@@ -110,7 +110,8 @@
         d.unit AS unit,
         d.retail_price AS retailPrice,
         d.description AS description,
-        d.manufacturer AS manufacturer
+        d.manufacturer AS manufacturer,
+        d.status AS status
         FROM drug d
         LEFT JOIN drug_category c ON d.category_id = c.category_id
         <where>
@@ -140,5 +141,6 @@
             </if>
         </where>
     </select>
+
 
 </mapper>

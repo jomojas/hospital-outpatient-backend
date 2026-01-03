@@ -18,5 +18,13 @@ public class StaffDetailResponse {
     private String roleName;       // 新增
     private String description;
     private Boolean isExpert; // 新增
+
+    /**
+     * 员工在职状态：来源 staff_account.status
+     * - 0: 在职/启用
+     * - 1: 停用/离职
+     */
+    private Integer status;
+
     private LocalDateTime createTime;
 }

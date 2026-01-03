@@ -80,4 +80,13 @@ public class DepartmentController {
         departmentService.deleteDepartment(departmentId);
         return ApiResponse.ok();
     }
+
+    @Operation(summary = "恢复科室", description = "根据科室ID将科室状态从0恢复为1")
+    @PutMapping("/{id}/restore")
+    public ApiResponse<?> restoreDepartment(
+            @PathVariable("id") Integer departmentId
+    ) {
+        departmentService.restoreDepartment(departmentId);
+        return ApiResponse.ok();
+    }
 }

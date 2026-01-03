@@ -148,4 +148,12 @@
         WHERE item_id = #{itemId}
     </update>
 
+    <!-- 获取最大序列号，用于代码生成 -->
+    <select id="getMaxMedicalItemSeq" resultType="int">
+        SELECT COALESCE(MAX(CAST(SUBSTRING(item_code, LENGTH(#{prefix}) + 1) AS UNSIGNED)), 0)
+        FROM medical_service_item
+        WHERE item_type = #{type}
+          AND item_code LIKE CONCAT(#{prefix}, '%')
+    </select>
+
 </mapper>

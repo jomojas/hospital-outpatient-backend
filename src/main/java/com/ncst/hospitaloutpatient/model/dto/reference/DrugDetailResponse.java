@@ -48,4 +48,7 @@ public class DrugDetailResponse {
 
     @Schema(description = "生产厂家", example = "某某制药有限公司")
     private String manufacturer;
+
+    @Schema(description = "药品状态：1启用，0停用", example = "1")
+    private Integer status;
 }

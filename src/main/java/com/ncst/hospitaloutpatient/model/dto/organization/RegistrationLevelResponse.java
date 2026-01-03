@@ -17,4 +17,7 @@ public class RegistrationLevelResponse {
 
     @Schema(description = "挂号费", example = "15.00")
     private BigDecimal price; // 对应 fee
+
+    @Schema(description = "状态：1启用，0停用", example = "1")
+    private Integer status; // 对应 status
 }

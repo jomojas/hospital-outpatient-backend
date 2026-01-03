@@ -61,4 +61,13 @@ public class MedicalItemController {
         medicalItemService.toggleStatus(itemId);
         return ApiResponse.ok();
     }
+
+    @Operation(summary = "生成医疗项目编码", description = "根据类型(EXAM/LAB/DISPOSAL)生成下一个项目编码")
+    @GetMapping("/next-code")
+    public ApiResponse<String> generateMedicalItemCode(
+            @Parameter(description = "项目类型：EXAM/LAB/DISPOSAL", required = true)
+            @RequestParam String type
+    ) {
+        return ApiResponse.ok(medicalItemService.generateMedicalItemCode(type));
+    }
 }

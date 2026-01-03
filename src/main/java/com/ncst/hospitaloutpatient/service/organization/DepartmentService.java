@@ -121,4 +121,14 @@ public class DepartmentService {
             throw new BusinessException(500, "科室删除失败");
         }
     }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void restoreDepartment(Integer departmentId) {
+        // 恢复逻辑：将 status 从 0 改为 1（启用）
+        // 这里不做“有员工/挂号”的限制，因为恢复不会破坏约束；如果需要可再补充校验
+        int res = departmentMapper.updateStatus(departmentId, 1);
+        if (res == 0) {
+            throw new BusinessException(404, "科室不存在或恢复失败");
+        }
+    }
 }

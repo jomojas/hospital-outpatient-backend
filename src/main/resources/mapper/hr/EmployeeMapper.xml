@@ -18,11 +18,13 @@
         r.role_name,
         s.description,
         s.create_time,
-        ext.is_expert
+        ext.is_expert,
+        sa.status
         FROM staff s
         LEFT JOIN department d ON s.department_id = d.department_id
         LEFT JOIN staff_role r ON s.role_id = r.role_id
         LEFT JOIN staff_doctor_ext ext ON s.staff_id = ext.staff_id
+        LEFT JOIN staff_account sa ON s.staff_id = sa.staff_id
         <where>
             <if test="keyword != null and keyword != ''">
                 (s.name LIKE CONCAT('%', #{keyword}, '%') OR s.phone LIKE CONCAT('%', #{keyword}, '%'))
@@ -79,7 +81,7 @@
         INSERT INTO staff_account
             (staff_id, account_name, password, status, create_time)
         VALUES
-            (#{staffId}, #{accountName}, #{password}, 0, NOW())
+            (#{staffId}, #{accountName}, #{password}, 1, NOW())
     </insert>
 
     <insert id="insertStaffDoctorExt">
@@ -125,13 +127,13 @@
 
     <update id="deleteEmployeeByStaffId">
         UPDATE staff_account
-        SET status = 1
+        SET status = 0
         WHERE staff_id = #{staffId}
     </update>
 
     <update id="restoreEmployeeByStaffId">
         UPDATE staff_account
-        SET status = 0
+        SET status = 1
         WHERE staff_id = #{staffId}
     </update>
 
@@ -148,11 +150,13 @@
             r.role_name,
             s.description,
             s.create_time,
-            ext.is_expert
+            ext.is_expert,
+            sa.status
         FROM staff s
                  LEFT JOIN department d ON s.department_id = d.department_id
                  LEFT JOIN staff_role r ON s.role_id = r.role_id
                  LEFT JOIN staff_doctor_ext ext ON s.staff_id = ext.staff_id
+                 LEFT JOIN staff_account sa ON s.staff_id = sa.staff_id
         WHERE s.staff_id = #{staffId}
     </select>
 
@@ -175,6 +179,12 @@
             description
         FROM staff_role
         ORDER BY role_id
+    </select>
+
+    <select id="getDepartmentType" resultType="string">
+        SELECT type
+        FROM department
+        WHERE department_id = #{departmentId}
     </select>
 
 </mapper>
