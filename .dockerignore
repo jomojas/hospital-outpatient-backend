@@ -1,0 +1,12 @@
+# Speed up Docker builds by ignoring files not needed in the image
+.git/
+.idea/
+.vscode/
+*.iml
+
+target/
+
+# Other local artifacts
+*.log
+*.env
+
